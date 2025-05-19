@@ -1,27 +1,37 @@
 import cv2 as cv
 
-def load_images():
-    apple = cv.imread('images/apple.png')
+def load_images(size = 32):
+    apple = cv.imread('images/apple.png', cv.IMREAD_UNCHANGED)
+    apple = cv.resize(apple, (size, size), interpolation=cv.INTER_NEAREST)
+    apple = cv.cvtColor(apple, cv.COLOR_BGRA2RGBA)
 
-    head_down = cv.imread('images/snake_head.png')
+    head_down = cv.imread('images/snake_head.png', cv.IMREAD_UNCHANGED)
+    head_down = cv.resize(head_down, (size, size), interpolation=cv.INTER_NEAREST)
+    head_down = cv.cvtColor(head_down, cv.COLOR_BGRA2RGBA)
     head_up = cv.rotate(head_down, cv.ROTATE_180)
     head_left = cv.rotate(head_down, cv.ROTATE_90_CLOCKWISE)
     head_right = cv.rotate(head_down, cv.ROTATE_90_COUNTERCLOCKWISE)
     head = [head_down, head_up, head_left, head_right]
 
-    body_down = cv.imread('images/snake_body.png')
+    body_down = cv.imread('images/snake_body.png', cv.IMREAD_UNCHANGED)
+    body_down = cv.resize(body_down, (size, size), interpolation=cv.INTER_NEAREST)
+    body_down = cv.cvtColor(body_down, cv.COLOR_BGRA2RGBA)
     body_up = cv.rotate(body_down, cv.ROTATE_180)
     body_left = cv.rotate(body_down, cv.ROTATE_90_CLOCKWISE)
     body_right = cv.rotate(body_down, cv.ROTATE_90_COUNTERCLOCKWISE)
     body = [body_down, body_up, body_left, body_right]
 
-    tail_down = cv.imread('images/snake_tail.png')
+    tail_down = cv.imread('images/snake_tail.png', cv.IMREAD_UNCHANGED)
+    tail_down = cv.resize(tail_down, (size, size), interpolation=cv.INTER_NEAREST)
+    tail_down = cv.cvtColor(tail_down, cv.COLOR_BGRA2RGBA)
     tail_up = cv.rotate(tail_down, cv.ROTATE_180)
     tail_left = cv.rotate(tail_down, cv.ROTATE_90_CLOCKWISE)
     tail_right = cv.rotate(tail_down, cv.ROTATE_90_COUNTERCLOCKWISE)
     tail = [tail_down, tail_up, tail_left, tail_right]
 
-    bent_down_left = cv.imread('images/snake_body_bent.png')
+    bent_down_left = cv.imread('images/snake_body_bent.png', cv.IMREAD_UNCHANGED)
+    bent_down_left = cv.resize(bent_down_left, (size, size), interpolation=cv.INTER_NEAREST)
+    bent_down_left = cv.cvtColor(bent_down_left, cv.COLOR_BGRA2RGBA)
     bent_down_right = cv.flip(bent_down_left, 1)
     bent_up_left = cv.flip(bent_down_left, 0)
     bent_up_right = cv.flip(bent_down_left, -1)

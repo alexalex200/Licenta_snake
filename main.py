@@ -1,27 +1,29 @@
-# Create a new file called demo.py
-import torch
 import pygame
 from game import Game
-from draw_game import Draw  # Import your game classes
-from rl import DQN, SnakeGameEnv, demo_agent  # Import your DQN and environment classes
+from draw_game import Draw
+from agent import Agent
+import torch
 
-# Initialize device
-device = torch.device("cuda" if torch.cuda.is_available() else
-                       "mps" if torch.backends.mps.is_available() else "cpu")
+pygame.init()
 
-# Create environment
-env = SnakeGameEnv(board_size=(20, 20), num_snakes=1, agent_index=0)
+game = Game(board_size=(10, 10), num_snakes=1)
+agent = Agent(0)
+model = torch.load('model/model_10x10_39.pth')
 
-# Initialize model
-state, _ = env.reset()
-n_observations = len(state)
-n_actions = env.action_space.n
-policy_net = DQN(n_observations, n_actions).to(device)
+draw = Draw(game)
 
-# Load the trained model
-policy_net.load_state_dict(torch.load("snake_dqn_model.pth"))
-policy_net.eval()  # Set to evaluation mode
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
 
+    state = agent.get_state(game)
+    move = model(state)
 
-# Run the demo
-demo_agent(policy_net, env, num_episodes=5)
+    game.change_direction(game.snakes[0], move)
+    game.update()
+
+    # Draw the game
+    draw.draw()
+pygame.quit()
