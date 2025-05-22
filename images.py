@@ -1,9 +1,19 @@
 import cv2 as cv
+import random
+import copy
 
 def load_images(size = 32):
     apple = cv.imread('images/apple.png', cv.IMREAD_UNCHANGED)
     apple = cv.resize(apple, (size, size), interpolation=cv.INTER_NEAREST)
     apple = cv.cvtColor(apple, cv.COLOR_BGRA2RGBA)
+
+    grass = cv.imread('images/grass.png', cv.IMREAD_UNCHANGED)
+    grass = cv.resize(grass, (size, size), interpolation=cv.INTER_NEAREST)
+    grass = cv.cvtColor(grass, cv.COLOR_BGRA2RGBA)
+
+    mud = cv.imread('images/mud.png', cv.IMREAD_UNCHANGED)
+    mud = cv.resize(mud, (size, size), interpolation=cv.INTER_NEAREST)
+    mud = cv.cvtColor(mud, cv.COLOR_BGRA2RGBA)
 
     head_down = cv.imread('images/snake_head.png', cv.IMREAD_UNCHANGED)
     head_down = cv.resize(head_down, (size, size), interpolation=cv.INTER_NEAREST)
@@ -41,7 +51,7 @@ def load_images(size = 32):
     bent_right_up = cv.flip(bent_right_down, 0)
 
     bent = [bent_down_left, bent_down_right, bent_up_left, bent_up_right, bent_left_up, bent_left_down, bent_right_up, bent_right_down]
-    return apple, head, body, tail, bent
+    return apple, grass, mud, head, body, tail, bent
 
 
 def get_head_direction(head, x, y):
@@ -53,6 +63,7 @@ def get_head_direction(head, x, y):
         return head[0]
     elif y == -1:
         return head[1]
+    return None
 
 
 def get_body_direction(body, x, y):
@@ -64,6 +75,7 @@ def get_body_direction(body, x, y):
         return body[0]
     elif y == -1:
         return body[1]
+    return None
 
 
 def get_tail_direction(tail, x, y):
@@ -75,6 +87,7 @@ def get_tail_direction(tail, x, y):
         return tail[0]
     elif y == -1:
         return tail[1]
+    return None
 
 
 def get_bent_direction(bent, x, y, next_x, next_y):
@@ -94,9 +107,32 @@ def get_bent_direction(bent, x, y, next_x, next_y):
         return bent[6]
     elif y == -1 and next_x == 1:
         return bent[7]
+    return None
 
-# _,_,_,_,bent = load_images()
-# for b in bent:
-#     cv.imshow('bent', b)
-#     cv.waitKey(0)
-#     cv.destroyAllWindows()
+
+def get_random_color():
+    original = tuple(random.sample(range(0, 256), 3))
+    while sum(original) < 100:
+        original = tuple(random.sample(range(0, 256), 3))
+    darker = tuple(int(x * 0.8) for x in original)
+    brighter = tuple(int(x * 1.2) if int(x * 1.2) <= 255 else 255 for x in original)
+
+    return original, darker, brighter
+
+#168 230 29 original
+#34 177 76 darker
+#211 249 188 brighter
+
+def change_colors(img, original, darker, brighter):
+    img = copy.deepcopy(img)
+    height, width = img.shape[:2]
+    for i in range(height):
+        for j in range(width):
+            r, g, b, a = img[i, j]
+            if r == 168 and g == 230 and b == 29:
+                img[i, j] = [*original, a]
+            elif r == 34 and g == 177 and b == 76:
+                img[i, j] = [*darker, a]
+            elif r == 211 and g == 249 and b == 188:
+                img[i, j] = [*brighter, a]
+    return img

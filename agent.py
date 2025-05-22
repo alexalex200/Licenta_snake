@@ -33,17 +33,22 @@ def plot(scores, mean_scores):
     plt.pause(.1)
 
 class Agent:
-    def __init__(self, index_snake):
+    def __init__(self, index_snake, model=None):
         self.index_snake = index_snake
         self.n_games = 0
         self.epsilon = 0
         self.gamma = 0.9
         self.memory = deque(maxlen=MAX_MEMORY)
 
-        self.model = Linear_QNet(11, 256, 3)
+        self.model = Linear_QNet(12, 256, 3)
+        if model is not None:
+            self.model.load_state_dict(torch.load(model))
+            self.model.eval()
+
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.model.to(self.device)
 
     def get_state(self, game):
         snake = game.snakes[self.index_snake]
@@ -52,6 +57,8 @@ class Agent:
         state.append(game.is_collision(snake, snake.direction))
         state.append(game.is_collision(snake, direction_to_right(snake.direction)))
         state.append(game.is_collision(snake, direction_to_left(snake.direction)))
+
+        state.append(game.in_puddle(snake))
 
         state.append(snake.direction == (0, -1))
         state.append(snake.direction == (0, 1))
@@ -116,11 +123,12 @@ def train():
     total_score = 0
     record = 0
     agent = Agent(0)
-    game = Game(board_size=(10, 10), num_snakes=1)
+    game = Game(board_size=(10, 10), num_snakes=1, num_apples=2, num_puddles=1)
     draw_game = Draw(game)
 
     while True:
-        draw_game.draw()
+        if record > 100:
+            draw_game.draw()
         state_old = agent.get_state(game)
         final_move = agent.get_action(state_old)
 

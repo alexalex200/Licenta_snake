@@ -1,13 +1,18 @@
 import random
 import math
+from images import get_random_color
 
 
 class Snake:
-    def __init__(self, start_pos, direction, length=3):
+    def __init__(self, start_pos, direction, length=3, random_color=True):
         self.body = []
         self.direction = direction
+        self.colors = []
+        if random_color:
+            self.colors = get_random_color()
         self.score = 0
         self.frame_iteration = 0
+        self.dead = False
         x, y = start_pos
         dx, dy = direction
         for i in range(length):
@@ -36,6 +41,33 @@ class Apple:
             if (x, y) not in occupied_positions:
                 return x, y
 
+class Puddle:
+    def __init__(self, board_size, area = 20):
+        self.mud = self.generate_puddle(board_size,area)
+
+    def generate_puddle(self, board_size, area):
+        mud = set()
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+        start = (random.randint(0, board_size[0] - 1), random.randint(0, board_size[1] - 1))
+        mud.add(start)
+        frontier = [start]
+
+        while frontier and len(mud) < area:
+            current = random.choice(frontier)
+            random.shuffle(directions)
+
+            for dx, dy in directions:
+                neighbor = (current[0] + dx, current[1] + dy)
+                if 0 <= neighbor[0] < board_size[0] and 0 <= neighbor[1] < board_size[1] and neighbor not in mud:
+                    mud.add(neighbor)
+                    frontier.append(neighbor)
+                    break
+            else:
+                frontier.remove(current)
+
+        return list(mud)
+
 
 def dir_to_center(x, y, board_size):
     center_x = board_size[0] / 2
@@ -44,7 +76,6 @@ def dir_to_center(x, y, board_size):
     dx = 1 if x <= center_x else -1
     dy = 1 if y <= center_y else -1
 
-    # Prefer moving along x-axis if possible
     return (dx, 0) if dx != 0 else (0, dy)
 
 
@@ -70,38 +101,6 @@ def direction_to_left(direction):
     return left_turns[direction]
 
 
-def direction_index_to_center(x, y, board_width, board_height):
-    center_x = board_width // 2
-    center_y = board_height // 2
-
-    dx = 0
-    dy = 0
-
-    if x < center_x:
-        dx = 1
-    elif x > center_x:
-        dx = -1
-
-    if y < center_y:
-        dy = 1
-    elif y > center_y:
-        dy = -1
-
-    direction_map = {
-        (-1, -1): 0,
-        (0, -1): 1,
-        (1, -1): 2,
-        (1, 0): 3,
-        (1, 1): 4,
-        (0, 1): 5,
-        (-1, 1): 6,
-        (-1, 0): 7,
-        (0, 0): -1  # Special case: already at center
-    }
-
-    return direction_map[(dx, dy)]
-
-
 def in_radius(apple_x, apple_y, snake_x, snake_y, radius):
     if (apple_x - snake_x) ** 2 + (apple_y - snake_y) ** 2 <= radius ** 2:
         return 1  # - ((apple_x - snake_x) ** 2 + (apple_y - snake_y) ** 2) / radius ** 2
@@ -110,18 +109,21 @@ def in_radius(apple_x, apple_y, snake_x, snake_y, radius):
 
 
 class Game:
-    def __init__(self, board_size=(20, 20), num_snakes=2, num_apples=1):
+    def __init__(self, board_size=(20, 20), num_snakes=2, num_apples=2, num_puddles=1):
         self.board_size = board_size
         self.snakes = []
         self.num_snakes = num_snakes
         self.apples = []
         self.num_apples = num_apples
+        self.puddles = []
+        self.num_puddles = num_puddles
 
         self.reset()
 
     def reset(self):
         self.snakes = []
         self.apples = []
+        self.puddles = []
         nx, ny = math.ceil(math.sqrt(self.num_snakes)), math.ceil(math.sqrt(self.num_snakes))
         for i in range(nx):
             prev_x = i * (self.board_size[0] // nx)
@@ -132,13 +134,14 @@ class Game:
 
                 self.snakes.append(Snake(((x + prev_x) // 2, (y + prev_y) // 2),
                                          dir_to_center((x + prev_x) // 2, (y + prev_y) // 2, self.board_size)))
-                if len(self.snakes) >= len(self.snakes):
+                if len(self.snakes) >= self.num_snakes:
                     break
             else:
                 continue
             break
 
         self.apples = [Apple(self.board_size, self.get_occupied_positions()) for _ in range(self.num_apples)]
+        self.puddles = [Puddle(self.board_size) for _ in range(self.num_puddles)]
 
     def change_direction(self, snake, action):
 
@@ -172,19 +175,33 @@ class Game:
                 occupied_positions.append(pos)
         return occupied_positions
 
+    def in_puddle(self, snake):
+        for puddle in self.puddles:
+            for m in puddle.mud:
+                if m[0] == snake.body[0][0][0] and m[1] == snake.body[0][0][1]:
+                    return True
+        return False
+
     def update(self):
 
-        occupied_positions = self.get_occupied_positions()
         rewards = [0 for _ in range(self.num_snakes)]
         game_over = [False for _ in range(self.num_snakes)]
         for i, snake in enumerate(self.snakes):
-
+            if snake.dead:
+                game_over[i] = True
+                continue
+            occupied_positions = self.get_occupied_positions()
             snake.move()
             snake.frame_iteration += 1
+
+            if self.in_puddle(snake):
+                rewards[i] -= 2
 
             if self.is_snake_dead(snake, occupied_positions) or snake.frame_iteration > 100 * len(snake.body):
                 game_over[i] = True
                 rewards[i] = -10
+                snake.body = []
+                snake.dead = True
                 continue
 
             for apple in self.apples:
@@ -196,3 +213,5 @@ class Game:
 
         scores = [snake.score for snake in self.snakes]
         return rewards, game_over, scores
+
+game = Game(board_size=(20, 20), num_snakes=2)
