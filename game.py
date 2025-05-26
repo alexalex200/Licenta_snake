@@ -109,7 +109,7 @@ def in_radius(apple_x, apple_y, snake_x, snake_y, radius):
 
 
 class Game:
-    def __init__(self, board_size=(20, 20), num_snakes=2, num_apples=2, num_puddles=1):
+    def __init__(self, board_size=(20, 20), num_snakes=2, num_apples=2, num_puddles=0):
         self.board_size = board_size
         self.snakes = []
         self.num_snakes = num_snakes
@@ -193,14 +193,11 @@ class Game:
             occupied_positions = self.get_occupied_positions()
             snake.move()
             snake.frame_iteration += 1
-
-            if self.in_puddle(snake):
-                rewards[i] -= 2
-
-            if self.is_snake_dead(snake, occupied_positions) or snake.frame_iteration > 100 * len(snake.body):
+            # rewards[i] += 1/(self.board_size[0] * self.board_size[1] - len(snake.body))
+            if self.is_snake_dead(snake, occupied_positions) or snake.frame_iteration > 50 * len(snake.body):
                 game_over[i] = True
-                rewards[i] = -10
-                snake.body = []
+                rewards[i] = -5
+                # snake.body = []
                 snake.dead = True
                 continue
 
@@ -208,10 +205,8 @@ class Game:
                 if snake.body[0][0] == (apple.x, apple.y):
                     snake.grow()
                     snake.score += 1
-                    rewards[i] = 10
+                    rewards[i] = +5
                     apple.x, apple.y = apple.spawn_new_apple(self.board_size, self.get_occupied_positions())
 
         scores = [snake.score for snake in self.snakes]
         return rewards, game_over, scores
-
-game = Game(board_size=(20, 20), num_snakes=2)

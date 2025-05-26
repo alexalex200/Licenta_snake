@@ -3,7 +3,7 @@ from images import *
 
 BACKGROUND_COLOR = (34, 34, 34)
 GRID_COLOR = (60, 61, 55)
-cell_size = 32
+cell_size = 40
 
 
 class Draw:

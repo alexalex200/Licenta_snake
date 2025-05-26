@@ -63,7 +63,7 @@ class Agent_genetic:
                 ((0.25 * self.steps) ** 1.3) * (self.score ** 1.2))
 
 
-def look_in_direction(snake, direction, game):
+def look_in_direction(snake, direction, game, distance=False):
     occupied_positions = game.get_occupied_positions()
     dx, dy = direction
     x, y = snake.body[0][0][0] + dx, snake.body[0][0][1] + dy
@@ -72,15 +72,25 @@ def look_in_direction(snake, direction, game):
     is_body = 0
 
     while 0 <= x < game.board_size[0] and 0 <= y < game.board_size[1]:
-        if (x, y) in occupied_positions:
-            is_body = 1
+        if (x, y) in occupied_positions and is_body == 0:
+            is_body = dis_to_wall
         for apple in game.apples:
-            if (x, y) == (apple.x, apple.y):
-                is_apple = 1
+            if (x, y) == (apple.x, apple.y) and is_apple == 0:
+                is_apple = dis_to_wall
         dis_to_wall += 1
         x += dx
         y += dy
 
+    if is_body != 0:
+        if distance:
+            is_body = 1.0 / is_body
+        else:
+            is_body = 1
+    if is_apple != 0:
+        if distance:
+            is_apple = 1.0 / is_apple
+        else:
+            is_apple = 1
     return 1.0/dis_to_wall, is_apple, is_body
 
 
@@ -115,8 +125,8 @@ def roulette_selection(agents, num_parents):
 
 def train():
     num_generations = 1000
-    num_parents = 10
-    num_agents = 100
+    num_parents = 500
+    num_agents = 1000
     num_of_layers = 3
 
     game = Game((10, 10), num_snakes=1, num_apples=1)

@@ -13,7 +13,7 @@ from IPython import display
 
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1000
-LR = 0.001
+LR = 0.0005
 
 plt.ion()
 
@@ -40,7 +40,7 @@ class Agent:
         self.gamma = 0.9
         self.memory = deque(maxlen=MAX_MEMORY)
 
-        self.model = Linear_QNet(12, 256, 3)
+        self.model = Linear_QNet(11, 256, 3)
         if model is not None:
             self.model.load_state_dict(torch.load(model))
             self.model.eval()
@@ -57,8 +57,6 @@ class Agent:
         state.append(game.is_collision(snake, snake.direction))
         state.append(game.is_collision(snake, direction_to_right(snake.direction)))
         state.append(game.is_collision(snake, direction_to_left(snake.direction)))
-
-        state.append(game.in_puddle(snake))
 
         state.append(snake.direction == (0, -1))
         state.append(snake.direction == (0, 1))
@@ -104,9 +102,9 @@ class Agent:
         self.trainer.train_step(state, action, reward, next_state, done)
 
     def get_action(self, state):
-        self.epsilon = 80 - self.n_games
+        self.epsilon = 100 - self.n_games
         final_move = [0, 0, 0]
-        if random.randint(0, 200) < self.epsilon:
+        if random.randint(0, 100) < self.epsilon:
             move = random.randint(0, 2)
             final_move[move] = 1
         else:
@@ -123,12 +121,9 @@ def train():
     total_score = 0
     record = 0
     agent = Agent(0)
-    game = Game(board_size=(10, 10), num_snakes=1, num_apples=2, num_puddles=1)
-    draw_game = Draw(game)
+    game = Game(board_size=(10, 10), num_snakes=1, num_apples=1)
 
     while True:
-        if record > 100:
-            draw_game.draw()
         state_old = agent.get_state(game)
         final_move = agent.get_action(state_old)
 

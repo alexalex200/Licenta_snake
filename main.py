@@ -13,7 +13,7 @@ pygame.init()
 game = Game(board_size=(10, 10), num_snakes=1, num_apples=1)
 agents = []
 for i in range(game.num_snakes):
-    agents.append(Agent_genetic(i, model='model/GA_model_best.pth'))
+    agents.append(Agent(i, model='model/model_10x10_39.pth'))
 for agent in agents:
     agent.n_games = 100
 
@@ -27,7 +27,7 @@ while running:
     for i, agent in enumerate(agents):
         if game.snakes[i].dead:
             continue
-        state = agent.get_vision(game)
+        state = agent.get_state(game)
         state = torch.tensor(state, dtype=torch.float).to(agent.device)
         #move = agent.get_action(state)
         move = [0, 0, 0]
