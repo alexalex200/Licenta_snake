@@ -59,11 +59,11 @@ class Draw:
             self.screen.blit(pygame.image.frombuffer(self.apple.tobytes(), self.apple.shape[1::-1], "RGBA"),
                              (apple.x * cell_size, apple.y * cell_size))
 
-
     def draw_background(self):
         for i in range(self.width // cell_size):
             for j in range(self.height // cell_size):
-                self.screen.blit(pygame.image.frombuffer(self.grass.tobytes(), self.grass.shape[1::-1], "RGBA"),(i*cell_size, j*cell_size))
+                self.screen.blit(pygame.image.frombuffer(self.grass.tobytes(), self.grass.shape[1::-1], "RGBA"),
+                                 (i * cell_size, j * cell_size))
 
     def draw(self):
 

@@ -4,12 +4,13 @@ import numpy as np
 from draw_game import Draw
 import pygame
 
+
 class Snake:
     def __init__(self, start_pos, direction, length=3):
         self.body = []
         self.direction = direction
         self.score = 0
-        self.steps= 0
+        self.steps = 0
         self.energy = 0
         self.dead = False
         x, y = start_pos
@@ -46,6 +47,7 @@ def collision_with_snake(snake_body, position):
         if pos == position:
             return True
     return False
+
 
 def direction_to_right(direction):
     # Map the direction to a right turn
@@ -88,10 +90,9 @@ class Game:
     def __init__(self, board_size=(10, 10), num_apples=2):
         self.board_size = board_size
         self.num_apples = num_apples
-        self.snake = Snake((board_size[0] // 2, board_size[1] // 2), (1,0))
+        self.snake = Snake((board_size[0] // 2, board_size[1] // 2), (1, 0))
         self.snake.energy = board_size[0] * board_size[1]
         self.apples = [Apple(board_size, self.snake) for _ in range(num_apples)]
-
 
     def reset(self):
         self.snake = Snake((self.board_size[0] // 2, self.board_size[1] // 2), (1, 0))
@@ -100,16 +101,15 @@ class Game:
 
     def snake_out_of_bounds(self):
         if self.snake.body[0][0][0] < 0 or self.snake.body[0][0][0] >= self.board_size[0] or \
-           self.snake.body[0][0][1] < 0 or self.snake.body[0][0][1] >= self.board_size[1]:
+                self.snake.body[0][0][1] < 0 or self.snake.body[0][0][1] >= self.board_size[1]:
             return True
         return False
 
-    def closer_to_apple(self,apple):
+    def closer_to_apple(self, apple):
         if math.sqrt((apple.x - self.snake.body[0][0][0]) ** 2 + (apple.y - self.snake.body[0][0][1]) ** 2) < \
-           math.sqrt((apple.x - self.snake.body[1][0][0]) ** 2 + (apple.y - self.snake.body[1][0][1]) ** 2):
+                math.sqrt((apple.x - self.snake.body[1][0][0]) ** 2 + (apple.y - self.snake.body[1][0][1]) ** 2):
             return True
         return False
-
 
     def look_in_direction(self, direction):
         dx, dy = direction
@@ -131,7 +131,6 @@ class Game:
             len += 1
         is_wall = 1.0 / len
         return is_wall, is_apple, is_body
-
 
     def get_state(self):
         w, a, b = [], [], []
@@ -179,7 +178,8 @@ class Game:
         self.snake.steps += 1
         self.snake.energy -= 1
 
-        if collision_with_snake(self.snake.body[1:], self.snake.body[0][0]) or self.snake_out_of_bounds() or self.snake.energy <= 0:
+        if collision_with_snake(self.snake.body[1:],
+                                self.snake.body[0][0]) or self.snake_out_of_bounds() or self.snake.energy <= 0:
             game_over = True
             reward = -200
             return reward, game_over, self.snake.score

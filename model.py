@@ -46,7 +46,7 @@ class Memory:
 
 
 class Linear_Network(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, lr = 0.0005, genetic=False):
+    def __init__(self, input_size, hidden_size, output_size, lr=0.0005, genetic=False):
         super().__init__()
 
         self.actor = nn.Sequential(
@@ -103,6 +103,7 @@ class Linear_Network(nn.Module):
             self.eval()
         else:
             raise FileNotFoundError(f"Model file {file_name} not found.")
+
 
 class Critic_Network(nn.Module):
     def __init__(self, input_size, hidden_size, lr=0.0005):

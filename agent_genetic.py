@@ -14,12 +14,18 @@ class Individual:
         self.fitness = 0
         self.score = 0
 
-        self.model = Linear_Network(input_dims, [20, 12], n_actions,genetic = True)
+        self.model = Linear_Network(input_dims, [20, 12], n_actions, genetic=True)
 
     def calculate_fitness(self, steps, score):
         self.fitness = steps + ((2 ** score) + (score ** 2.1) * 500) - (
                 ((0.25 * steps) ** 1.3) * (score ** 1.2))
         self.score = score
+
+    def choose_action(self, observation):
+        state = torch.tensor(observation, dtype=torch.float).to(self.model.device)
+        dist = self.model(state)
+        action = torch.argmax(dist)
+        return action
 
 def roulette_selection(agents, num_parents):
     selection = []
@@ -62,7 +68,8 @@ if __name__ == '__main__':
 
         individuals.sort(key=lambda x: x.fitness, reverse=True)
         best_individuals = individuals[:num_parents]
-        print(f'Generation {generation}, Best fitness: {best_individuals[0].fitness}, Score: {best_individuals[0].score}')
+        print(
+            f'Generation {generation}, Best fitness: {best_individuals[0].fitness}, Score: {best_individuals[0].score}')
         if best_individuals[0].fitness >= best_fitness:
             best_fitness = best_individuals[0].fitness
             best_individuals[0].model.save('ga_best_model.pth')

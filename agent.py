@@ -1,24 +1,23 @@
 import os
+
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 import torch
-import random
 import numpy as np
-from tensorflow import broadcast_static_shape
-from torch.distributed.argparse_util import env
-
 from game import Game
-from model import Linear_Network,Critic_Network,Memory
+from model import Linear_Network, Critic_Network, Memory
 from draw_game import Draw
 
+
 class Agent:
-    def __init__(self, n_actions, input_dims, gamma=0.999, lr=0.0003, gae_lambda=0.95, policy_clip=0.2, batch_size=64, n_epochs=10):
+    def __init__(self, n_actions, input_dims, gamma=0.999, lr=0.0003, gae_lambda=0.95, policy_clip=0.2, batch_size=64,
+                 n_epochs=10):
 
         self.gamma = gamma
         self.policy_clip = policy_clip
         self.n_epochs = n_epochs
         self.gae_lambda = gae_lambda
 
-        self.actor = Linear_Network(input_dims,[20,12], n_actions, lr)
+        self.actor = Linear_Network(input_dims, [20, 12], n_actions, lr)
         self.critic = Critic_Network(input_dims, [64, 64], lr)
         self.memory = Memory(batch_size)
 
@@ -79,7 +78,7 @@ class Agent:
                 # prob_ratio = (new_probs - old_probs).exp()
                 weighted_probs = advantage[batch] * prob_ratio
                 weighted_clipped_probs = torch.clamp(prob_ratio, 1 - self.policy_clip,
-                                                 1 + self.policy_clip) * advantage[batch]
+                                                     1 + self.policy_clip) * advantage[batch]
                 actor_loss = -torch.min(weighted_probs, weighted_clipped_probs).mean()
 
                 returns = advantage[batch] + values[batch]
@@ -137,4 +136,5 @@ if __name__ == "__main__":
             best_score = score
             agent.save_models(name="ppo_agent")
 
-        print(f"Game {i + 1}, Score: {score}, Avg Score: {avg_score}, Best Score: {best_score}, Steps: {n_steps}, Learn Iterations: {learn_iters}")
+        print(
+            f"Game {i + 1}, Score: {score}, Avg Score: {avg_score}, Best Score: {best_score}, Steps: {n_steps}, Learn Iterations: {learn_iters}")
