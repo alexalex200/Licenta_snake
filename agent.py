@@ -1,157 +1,140 @@
+import os
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 import torch
 import random
 import numpy as np
-import math
-from collections import deque
-from game import Game, direction_to_right, direction_to_left
-from model import Linear_QNet, QTrainer
+from tensorflow import broadcast_static_shape
+from torch.distributed.argparse_util import env
+
+from game import Game
+from model import Linear_Network,Critic_Network,Memory
 from draw_game import Draw
-import matplotlib
-import matplotlib.pyplot as plt
-matplotlib.use('Agg')  # Use a non-GUI backend for matplotlib
-from IPython import display
-
-MAX_MEMORY = 100_000
-BATCH_SIZE = 1000
-LR = 0.0005
-
-plt.ion()
-
-def plot(scores, mean_scores):
-    display.clear_output(wait=True)
-    display.display(plt.gcf())
-    plt.clf()
-    plt.title('Training...')
-    plt.xlabel('Number of Games')
-    plt.ylabel('Score')
-    plt.plot(scores)
-    plt.plot(mean_scores)
-    plt.ylim(ymin=0)
-    plt.text(len(scores)-1, scores[-1], str(scores[-1]))
-    plt.text(len(mean_scores)-1, mean_scores[-1], str(mean_scores[-1]))
-    plt.show(block=False)
-    plt.pause(.1)
 
 class Agent:
-    def __init__(self, index_snake, model=None):
-        self.index_snake = index_snake
-        self.n_games = 0
-        self.epsilon = 0
-        self.gamma = 0.9
-        self.memory = deque(maxlen=MAX_MEMORY)
+    def __init__(self, n_actions, input_dims, gamma=0.999, lr=0.0003, gae_lambda=0.95, policy_clip=0.2, batch_size=64, n_epochs=10):
 
-        self.model = Linear_QNet(11, 256, 3)
-        if model is not None:
-            self.model.load_state_dict(torch.load(model))
-            self.model.eval()
+        self.gamma = gamma
+        self.policy_clip = policy_clip
+        self.n_epochs = n_epochs
+        self.gae_lambda = gae_lambda
 
-        self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
+        self.actor = Linear_Network(input_dims,[20,12], n_actions, lr)
+        self.critic = Critic_Network(input_dims, [64, 64], lr)
+        self.memory = Memory(batch_size)
 
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.model.to(self.device)
+    def remember(self, state, action, prob, val, reward, done):
+        self.memory.store_memory(state, action, prob, val, reward, done)
 
-    def get_state(self, game):
-        snake = game.snakes[self.index_snake]
-        state = []
+    def save_models(self, name="ppo_agent"):
+        torch.save(self.actor.state_dict(), f"{name}_actor.pth")
+        torch.save(self.critic.state_dict(), f"{name}_critic.pth")
 
-        state.append(game.is_collision(snake, snake.direction))
-        state.append(game.is_collision(snake, direction_to_right(snake.direction)))
-        state.append(game.is_collision(snake, direction_to_left(snake.direction)))
+    def load_models(self, name="ppo_agent"):
+        self.actor.load_state_dict(torch.load(f"{name}_actor.pth"))
+        self.critic.load_state_dict(torch.load(f"{name}_critic.pth"))
 
-        state.append(snake.direction == (0, -1))
-        state.append(snake.direction == (0, 1))
-        state.append(snake.direction == (-1, 0))
-        state.append(snake.direction == (1, 0))
+    def choose_action(self, observation):
+        state = torch.tensor(observation, dtype=torch.float).to(self.actor.device)
+        dist = self.actor(state)
+        value = self.critic(state)
+        action = dist.sample()
 
-        closest_apple = None
-        closest_distance = float('inf')
-        for apple in game.apples:
-            if math.sqrt(
-                    (apple.x - snake.body[0][0][0]) ** 2 + (apple.y - snake.body[0][0][1]) ** 2) < closest_distance:
-                closest_distance = math.sqrt(
-                    (apple.x - snake.body[0][0][0]) ** 2 + (apple.y - snake.body[0][0][1]) ** 2)
-                closest_apple = apple
+        prob = torch.squeeze(dist.log_prob(action)).item()
+        action = torch.squeeze(action).item()
+        value = torch.squeeze(value).item()
 
-        state.append(closest_apple.x < snake.body[0][0][0])
-        state.append(closest_apple.x > snake.body[0][0][0])
-        state.append(closest_apple.y < snake.body[0][0][1])
-        state.append(closest_apple.y > snake.body[0][0][1])
+        return action, prob, value
 
-        return np.array(state, dtype=int)
+    def learn(self):
+        for _ in range(self.n_epochs):
+            state_arr, action_arr, old_prob_arr, vals_arr, \
+                reward_arr, dones_arr, batches = \
+                self.memory.generate_batches()
 
-    def remember(self, state, action, reward, next_state, done):
-        self.memory.append((state, action, reward, next_state, done))
+            values = vals_arr
+            advantage = np.zeros(len(reward_arr), dtype=np.float32)
 
-    def train_long_memory(self):
-        if len(self.memory) > BATCH_SIZE:
-            mini_sample = random.sample(self.memory, BATCH_SIZE)
-        else:
-            mini_sample = self.memory
+            for t in range(len(reward_arr) - 1):
+                discount = 1
+                a_t = 0
+                for k in range(t, len(reward_arr) - 1):
+                    a_t += discount * (reward_arr[k] + self.gamma * values[k + 1] * (1 - int(dones_arr[k])) - values[k])
+                    discount *= self.gamma * self.gae_lambda
+                advantage[t] = a_t
+            advantage = torch.tensor(advantage).to(self.actor.device)
 
-        for state, action, reward, next_state, done in mini_sample:
-            self.train_short_memory(state, action, reward, next_state, done)
-        # states = np.array([item[0] for item in mini_sample])
-        # actions = np.array([item[1] for item in mini_sample])
-        # rewards = np.array([item[2] for item in mini_sample])
-        # next_states = np.array([item[3] for item in mini_sample])
-        # dones = np.array([item[4] for item in mini_sample])
-        #
-        # self.train_short_memory(states, actions, rewards, next_states, dones)
+            values = torch.tensor(values).to(self.actor.device)
+            for batch in batches:
+                states = torch.tensor(state_arr[batch], dtype=torch.float).to(self.actor.device)
+                old_probs = torch.tensor(old_prob_arr[batch]).to(self.actor.device)
+                actions = torch.tensor(action_arr[batch]).to(self.actor.device)
 
-    def train_short_memory(self, state, action, reward, next_state, done):
-        self.trainer.train_step(state, action, reward, next_state, done)
+                dist = self.actor(states)
+                critic_value = self.critic(states)
 
-    def get_action(self, state):
-        self.epsilon = 100 - self.n_games
-        final_move = [0, 0, 0]
-        if random.randint(0, 100) < self.epsilon:
-            move = random.randint(0, 2)
-            final_move[move] = 1
-        else:
-            state0 = torch.tensor(state, dtype=torch.float).to(self.device)
-            prediction = self.model(state0)
-            move = torch.argmax(prediction).item()
-            final_move[move] = 1
-        return final_move
+                critic_value = torch.squeeze(critic_value)
 
+                new_probs = dist.log_prob(actions)
+                prob_ratio = new_probs.exp() / old_probs.exp()
+                # prob_ratio = (new_probs - old_probs).exp()
+                weighted_probs = advantage[batch] * prob_ratio
+                weighted_clipped_probs = torch.clamp(prob_ratio, 1 - self.policy_clip,
+                                                 1 + self.policy_clip) * advantage[batch]
+                actor_loss = -torch.min(weighted_probs, weighted_clipped_probs).mean()
 
-def train():
-    plot_scores = []
-    plot_mean_scores = []
-    total_score = 0
-    record = 0
-    agent = Agent(0)
-    game = Game(board_size=(10, 10), num_snakes=1, num_apples=1)
+                returns = advantage[batch] + values[batch]
+                critic_loss = (returns - critic_value) ** 2
+                critic_loss = critic_loss.mean()
 
-    while True:
-        state_old = agent.get_state(game)
-        final_move = agent.get_action(state_old)
+                total_loss = actor_loss + 0.5 * critic_loss
+                self.actor.optimizer.zero_grad()
+                self.critic.optimizer.zero_grad()
+                total_loss.backward()
+                self.actor.optimizer.step()
+                self.critic.optimizer.step()
 
-        game.change_direction(game.snakes[0], final_move)
-
-        rewards, dones, scores = game.update()
-        reward, done, score = rewards[0], dones[0], scores[0]
-
-        state_new = agent.get_state(game)
-        agent.train_short_memory(state_old, final_move, reward, state_new, done)
-        agent.remember(state_old, final_move, reward, state_new, done)
-
-        if done:
-            game.reset()
-            agent.n_games += 1
-            agent.train_long_memory()
-            if score > record:
-                record = score
-                # Save the model
-                agent.model.save()
-            print(f'Game {agent.n_games}, Score: {score}, Record: {record}')
-            plot_scores.append(score)
-            total_score += score
-            mean_score = total_score / agent.n_games
-            plot_mean_scores.append(mean_score)
-            # plot(plot_scores, plot_mean_scores)
+        self.memory.clear_memory()
 
 
 if __name__ == "__main__":
-    train()
+    game = Game(board_size=(6, 6), num_apples=1)
+    N = 256
+    batch_size = 8
+    n_epochs = 3
+    lr = 0.0005
+    agent = Agent(n_actions=3, input_dims=32, batch_size=batch_size, n_epochs=n_epochs, lr=lr)
+    agent.load_models(name="ppo_agent")
 
+    n_games = 10000
+
+    best_score = 0
+    score_history = []
+
+    learn_iters = 0
+    avg_score = 0
+    n_steps = 0
+
+    for i in range(n_games):
+        game.reset()
+        observation = game.get_state()
+        done = False
+        score = 0
+
+        while not done:
+            action, prob, value = agent.choose_action(observation)
+            reward, done, score = game.step(action)
+            observation_ = game.get_state()
+            n_steps += 1
+            agent.remember(observation, action, prob, value, reward, done)
+            if n_steps % batch_size == 0:
+                agent.learn()
+                learn_iters += 1
+            observation = observation_
+        score_history.append(score)
+        avg_score = np.mean(score_history[-100:])
+
+        if score >= best_score:
+            best_score = score
+            agent.save_models(name="ppo_agent")
+
+        print(f"Game {i + 1}, Score: {score}, Avg Score: {avg_score}, Best Score: {best_score}, Steps: {n_steps}, Learn Iterations: {learn_iters}")

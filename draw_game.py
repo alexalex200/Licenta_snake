@@ -3,7 +3,7 @@ from images import *
 
 BACKGROUND_COLOR = (34, 34, 34)
 GRID_COLOR = (60, 61, 55)
-cell_size = 40
+cell_size = 64
 
 
 class Draw:
@@ -28,40 +28,29 @@ class Draw:
     def draw_snake(self):
 
         tail = False
-        for snake in self.game.snakes:
+        snake = self.game.snake
+        head_img = get_head_direction(self.head, snake.direction[0], snake.direction[1])
+        self.screen.blit(pygame.image.frombuffer(head_img.tobytes(), head_img.shape[1::-1], "RGBA"),
+                         (snake.body[0][0][0] * cell_size, snake.body[0][0][1] * cell_size))
 
-            if len(snake.body) == 0:
-                continue
+        for i, body_part in enumerate(snake.body):
+            if i != 0 and i != len(snake.body) - 1:
+                if body_part[1] != snake.body[i - 1][1]:
+                    body_img = get_bent_direction(self.bent, body_part[1][0], body_part[1][1],
+                                                  snake.body[i - 1][1][0], snake.body[i - 1][1][1])
+                    if i == len(snake.body) - 2:
+                        tail = True
+                else:
+                    body_img = get_body_direction(self.body, body_part[1][0], body_part[1][1])
 
-            head_img = get_head_direction(self.head, snake.direction[0], snake.direction[1])
-            if len(snake.colors) != 0:
-                head_img = change_colors(head_img, snake.colors[0], snake.colors[1], snake.colors[2])
-
-            self.screen.blit(pygame.image.frombuffer(head_img.tobytes(), head_img.shape[1::-1], "RGBA"),
-                             (snake.body[0][0][0] * cell_size, snake.body[0][0][1] * cell_size))
-
-            for i, body_part in enumerate(snake.body):
-                if i != 0 and i != len(snake.body) - 1:
-                    if body_part[1] != snake.body[i - 1][1]:
-                        body_img = get_bent_direction(self.bent, body_part[1][0], body_part[1][1],
-                                                      snake.body[i - 1][1][0], snake.body[i - 1][1][1])
-                        if i == len(snake.body) - 2:
-                            tail = True
-                    else:
-                        body_img = get_body_direction(self.body, body_part[1][0], body_part[1][1])
-
-                    if len(snake.colors) != 0:
-                        body_img = change_colors(body_img, snake.colors[0], snake.colors[1], snake.colors[2])
-                    self.screen.blit(pygame.image.frombuffer(body_img.tobytes(), body_img.shape[1::-1], "RGBA"),
-                                     (body_part[0][0] * cell_size, body_part[0][1] * cell_size))
+                self.screen.blit(pygame.image.frombuffer(body_img.tobytes(), body_img.shape[1::-1], "RGBA"),
+                                 (body_part[0][0] * cell_size, body_part[0][1] * cell_size))
 
             if tail:
                 tail_image = get_tail_direction(self.tail, snake.body[-2][1][0], snake.body[-2][1][1])
                 tail = False
             else:
                 tail_image = get_tail_direction(self.tail, snake.body[-2][1][0], snake.body[-2][1][1])
-            if len(snake.colors) != 0:
-                    tail_image = change_colors(tail_image, snake.colors[0], snake.colors[1], snake.colors[2])
             self.screen.blit(pygame.image.frombuffer(tail_image.tobytes(), tail_image.shape[1::-1], "RGBA"),
                              (snake.body[-1][0][0] * cell_size, snake.body[-1][0][1] * cell_size))
 
@@ -70,11 +59,6 @@ class Draw:
             self.screen.blit(pygame.image.frombuffer(self.apple.tobytes(), self.apple.shape[1::-1], "RGBA"),
                              (apple.x * cell_size, apple.y * cell_size))
 
-    def draw_puddle(self):
-        for puddle in self.game.puddles:
-            for m in puddle.mud:
-                self.screen.blit(pygame.image.frombuffer(self.mud.tobytes(), self.mud.shape[1::-1], "RGBA"),
-                                 (m[0] * cell_size, m[1] * cell_size))
 
     def draw_background(self):
         for i in range(self.width // cell_size):
@@ -90,7 +74,7 @@ class Draw:
         self.draw_snake()
         self.draw_apple()
         pygame.display.update()
-        self.fps.tick(20)
+        self.fps.tick(10)
 
     def quit(self):
         pygame.quit()

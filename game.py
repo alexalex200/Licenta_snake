@@ -1,17 +1,16 @@
 import random
 import math
-from images import get_random_color
-
+import numpy as np
+from draw_game import Draw
+import pygame
 
 class Snake:
-    def __init__(self, start_pos, direction, length=3, random_color=True):
+    def __init__(self, start_pos, direction, length=3):
         self.body = []
         self.direction = direction
-        self.colors = []
-        if random_color:
-            self.colors = get_random_color()
         self.score = 0
-        self.frame_iteration = 0
+        self.steps= 0
+        self.energy = 0
         self.dead = False
         x, y = start_pos
         dx, dy = direction
@@ -31,53 +30,22 @@ class Snake:
 
 
 class Apple:
-    def __init__(self, board_size, occupied_positions):
-        self.x, self.y = self.spawn_new_apple(board_size, occupied_positions)
+    def __init__(self, board_size, snake):
+        self.x, self.y = self.spawn_new_apple(board_size, snake)
 
-    def spawn_new_apple(self, board_size, occupied_positions):
+    def spawn_new_apple(self, board_size, snake):
         while True:
             x = random.randint(0, board_size[0] - 1)
             y = random.randint(0, board_size[1] - 1)
-            if (x, y) not in occupied_positions:
+            if not collision_with_snake(snake.body, (x, y)):
                 return x, y
 
-class Puddle:
-    def __init__(self, board_size, area = 20):
-        self.mud = self.generate_puddle(board_size,area)
 
-    def generate_puddle(self, board_size, area):
-        mud = set()
-        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-
-        start = (random.randint(0, board_size[0] - 1), random.randint(0, board_size[1] - 1))
-        mud.add(start)
-        frontier = [start]
-
-        while frontier and len(mud) < area:
-            current = random.choice(frontier)
-            random.shuffle(directions)
-
-            for dx, dy in directions:
-                neighbor = (current[0] + dx, current[1] + dy)
-                if 0 <= neighbor[0] < board_size[0] and 0 <= neighbor[1] < board_size[1] and neighbor not in mud:
-                    mud.add(neighbor)
-                    frontier.append(neighbor)
-                    break
-            else:
-                frontier.remove(current)
-
-        return list(mud)
-
-
-def dir_to_center(x, y, board_size):
-    center_x = board_size[0] / 2
-    center_y = board_size[1] / 2
-
-    dx = 1 if x <= center_x else -1
-    dy = 1 if y <= center_y else -1
-
-    return (dx, 0) if dx != 0 else (0, dy)
-
+def collision_with_snake(snake_body, position):
+    for pos, _ in snake_body:
+        if pos == position:
+            return True
+    return False
 
 def direction_to_right(direction):
     # Map the direction to a right turn
@@ -101,112 +69,135 @@ def direction_to_left(direction):
     return left_turns[direction]
 
 
-def in_radius(apple_x, apple_y, snake_x, snake_y, radius):
-    if (apple_x - snake_x) ** 2 + (apple_y - snake_y) ** 2 <= radius ** 2:
-        return 1  # - ((apple_x - snake_x) ** 2 + (apple_y - snake_y) ** 2) / radius ** 2
-    else:
-        return 0
+def next_direction(direction):
+    # Map the direction to a right turn
+    right_turns = {
+        (0, 1): (1, 1),
+        (1, 1): (1, 0),
+        (1, 0): (1, -1),
+        (1, -1): (0, -1),
+        (0, -1): (-1, -1),
+        (-1, -1): (-1, 0),
+        (-1, 0): (-1, 1),
+        (-1, 1): (0, 1)
+    }
+    return right_turns[direction]
 
 
 class Game:
-    def __init__(self, board_size=(20, 20), num_snakes=2, num_apples=2, num_puddles=0):
+    def __init__(self, board_size=(10, 10), num_apples=2):
         self.board_size = board_size
-        self.snakes = []
-        self.num_snakes = num_snakes
-        self.apples = []
         self.num_apples = num_apples
-        self.puddles = []
-        self.num_puddles = num_puddles
+        self.snake = Snake((board_size[0] // 2, board_size[1] // 2), (1,0))
+        self.snake.energy = board_size[0] * board_size[1]
+        self.apples = [Apple(board_size, self.snake) for _ in range(num_apples)]
 
-        self.reset()
 
     def reset(self):
-        self.snakes = []
-        self.apples = []
-        self.puddles = []
-        nx, ny = math.ceil(math.sqrt(self.num_snakes)), math.ceil(math.sqrt(self.num_snakes))
-        for i in range(nx):
-            prev_x = i * (self.board_size[0] // nx)
-            x = (i + 1) * (self.board_size[0] // nx)
-            for j in range(ny):
-                prev_y = j * (self.board_size[1] // ny)
-                y = (j + 1) * (self.board_size[1] // ny)
+        self.snake = Snake((self.board_size[0] // 2, self.board_size[1] // 2), (1, 0))
+        self.snake.energy = self.board_size[0] * self.board_size[1]
+        self.apples = [Apple(self.board_size, self.snake) for _ in range(self.num_apples)]
 
-                self.snakes.append(Snake(((x + prev_x) // 2, (y + prev_y) // 2),
-                                         dir_to_center((x + prev_x) // 2, (y + prev_y) // 2, self.board_size)))
-                if len(self.snakes) >= self.num_snakes:
-                    break
-            else:
-                continue
-            break
-
-        self.apples = [Apple(self.board_size, self.get_occupied_positions()) for _ in range(self.num_apples)]
-        self.puddles = [Puddle(self.board_size) for _ in range(self.num_puddles)]
-
-    def change_direction(self, snake, action):
-
-        if action[0] == 1:
-            snake.direction = direction_to_right(snake.direction)
-        elif action[2] == 1:
-            snake.direction = direction_to_left(snake.direction)
-
-    def is_snake_dead(self, snake, ocupied_positions):
-        head_pos = snake.body[0][0]
-        if head_pos[0] < 0 or head_pos[0] >= self.board_size[0] or head_pos[1] < 0 or head_pos[1] >= self.board_size[1]:
-            return True
-        if head_pos in ocupied_positions:
+    def snake_out_of_bounds(self):
+        if self.snake.body[0][0][0] < 0 or self.snake.body[0][0][0] >= self.board_size[0] or \
+           self.snake.body[0][0][1] < 0 or self.snake.body[0][0][1] >= self.board_size[1]:
             return True
         return False
 
-    def is_collision(self, snake, direction):
-        ocupied_positions = self.get_occupied_positions()
-        head_pos = snake.body[0][0]
+    def closer_to_apple(self,apple):
+        if math.sqrt((apple.x - self.snake.body[0][0][0]) ** 2 + (apple.y - self.snake.body[0][0][1]) ** 2) < \
+           math.sqrt((apple.x - self.snake.body[1][0][0]) ** 2 + (apple.y - self.snake.body[1][0][1]) ** 2):
+            return True
+        return False
+
+
+    def look_in_direction(self, direction):
         dx, dy = direction
-        new_head_pos = (head_pos[0] + dx, head_pos[1] + dy)
-        if new_head_pos[0] < 0 or new_head_pos[0] >= self.board_size[0] or new_head_pos[1] < 0 or new_head_pos[1] >= \
-                self.board_size[1] or new_head_pos in ocupied_positions:
-            return True
-        return False
+        x, y = self.snake.body[0][0][0] + dx, self.snake.body[0][0][1] + dy
+        len = 1
+        is_wall = 0
+        is_apple = 0
+        is_body = 0
 
-    def get_occupied_positions(self):
-        occupied_positions = []
-        for snake in self.snakes:
-            for pos, _ in snake.body:
-                occupied_positions.append(pos)
-        return occupied_positions
-
-    def in_puddle(self, snake):
-        for puddle in self.puddles:
-            for m in puddle.mud:
-                if m[0] == snake.body[0][0][0] and m[1] == snake.body[0][0][1]:
-                    return True
-        return False
-
-    def update(self):
-
-        rewards = [0 for _ in range(self.num_snakes)]
-        game_over = [False for _ in range(self.num_snakes)]
-        for i, snake in enumerate(self.snakes):
-            if snake.dead:
-                game_over[i] = True
-                continue
-            occupied_positions = self.get_occupied_positions()
-            snake.move()
-            snake.frame_iteration += 1
-            # rewards[i] += 1/(self.board_size[0] * self.board_size[1] - len(snake.body))
-            if self.is_snake_dead(snake, occupied_positions) or snake.frame_iteration > 50 * len(snake.body):
-                game_over[i] = True
-                rewards[i] = -5
-                # snake.body = []
-                snake.dead = True
-                continue
-
+        while 0 <= x < self.board_size[0] and 0 <= y < self.board_size[1]:
+            if collision_with_snake(self.snake.body, (x, y)):
+                is_body = 1.0 / len
+                return is_wall, is_apple, is_body
             for apple in self.apples:
-                if snake.body[0][0] == (apple.x, apple.y):
-                    snake.grow()
-                    snake.score += 1
-                    rewards[i] = +5
-                    apple.x, apple.y = apple.spawn_new_apple(self.board_size, self.get_occupied_positions())
+                if (x, y) == (apple.x, apple.y):
+                    is_apple = 1.0
+            x += dx
+            y += dy
+            len += 1
+        is_wall = 1.0 / len
+        return is_wall, is_apple, is_body
 
-        scores = [snake.score for snake in self.snakes]
-        return rewards, game_over, scores
+
+    def get_state(self):
+        w, a, b = [], [], []
+        direction = self.snake.direction
+        for _ in range(8):
+            dis_to_wall, is_apple, is_body = self.look_in_direction(direction)
+            w.append(dis_to_wall)
+            a.append(is_apple)
+            b.append(is_body)
+            direction = next_direction(direction)
+        h = [0, 0, 0, 0]
+        if self.snake.direction == (-1, 0):
+            h[0] = 1
+        elif self.snake.direction == (1, 0):
+            h[1] = 1
+        elif self.snake.direction == (0, -1):
+            h[2] = 1
+        elif self.snake.direction == (0, 1):
+            h[3] = 1
+
+        t = [0, 0, 0, 0]
+        if self.snake.body[-1][1] == (-1, 0):
+            t[0] = 1
+        elif self.snake.body[-1][1] == (1, 0):
+            t[1] = 1
+        elif self.snake.body[-1][1] == (0, -1):
+            t[2] = 1
+        elif self.snake.body[-1][1] == (0, 1):
+            t[3] = 1
+
+        vision = list(np.concatenate((w, a, b, h, t)))
+        return np.array(vision, dtype=int)
+
+    def step(self, action):
+
+        reward = 0
+        game_over = False
+
+        if action == 0:
+            self.snake.direction = direction_to_right(self.snake.direction)
+        elif action == 2:
+            self.snake.direction = direction_to_left(self.snake.direction)
+
+        self.snake.move()
+        self.snake.steps += 1
+        self.snake.energy -= 1
+
+        if collision_with_snake(self.snake.body[1:], self.snake.body[0][0]) or self.snake_out_of_bounds() or self.snake.energy <= 0:
+            game_over = True
+            reward = -200
+            return reward, game_over, self.snake.score
+
+        if len(self.snake.body) == self.board_size[0] * self.board_size[1] - 1:
+            game_over = True
+            reward = 1000
+            return reward, game_over, self.snake.score
+
+        for apple in self.apples:
+            if self.closer_to_apple(apple):
+                reward += 5
+
+            if self.snake.body[0][0] == (apple.x, apple.y):
+                self.snake.grow()
+                self.snake.score += 1
+                reward += 100 - self.snake.energy * 0.5
+                self.snake.energy = self.board_size[0] * self.board_size[1]
+                apple.x, apple.y = apple.spawn_new_apple(self.board_size, self.snake)
+
+        return reward, game_over, self.snake.score

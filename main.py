@@ -10,10 +10,10 @@ from model import Linear_QNet
 
 pygame.init()
 
-game = Game(board_size=(10, 10), num_snakes=1, num_apples=1)
+game = Game(board_size=(6, 6), num_snakes=1, num_apples=1)
 agents = []
 for i in range(game.num_snakes):
-    agents.append(Agent(i, model='model/model_10x10_39.pth'))
+    agents.append(Agent(i, model='model/model.pth'))
 for agent in agents:
     agent.n_games = 100
 
@@ -27,11 +27,13 @@ while running:
     for i, agent in enumerate(agents):
         if game.snakes[i].dead:
             continue
-        state = agent.get_state(game)
+        state = agent.get_vision(game)
         state = torch.tensor(state, dtype=torch.float).to(agent.device)
-        #move = agent.get_action(state)
+        prediction = agent.model(state)
+        dist = torch.distributions.Categorical(prediction)
+        action = dist.sample().item()
         move = [0, 0, 0]
-        move[torch.argmax(agent.model(state)).item()] = 1
+        move[action] = 1
         game.change_direction(game.snakes[i], move)
 
     _,game_overs,_ = game.update()
