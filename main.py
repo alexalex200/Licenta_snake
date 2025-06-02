@@ -8,7 +8,6 @@ import torch
 if __name__ == "__main__":
 
     game = Game(board_size=(6, 6), num_apples=1)
-    draw = Draw(game)
 
     agent = Agent(3, 32)
     agent.actor.load("ppo_agent_actor.pth")
@@ -17,6 +16,8 @@ if __name__ == "__main__":
     individual = Individual(3, 32)
     individual.model.load("ga_best_model.pth")
 
+    draw = Draw(game, agent.actor)
+
     running = True
     while running:
         game.reset()
@@ -24,6 +25,6 @@ if __name__ == "__main__":
             draw.draw()
             state = game.get_state()
             action,_,_ = agent.choose_action(state)
-            _, done, _ = game.step(action)
+            _, done,score  = game.step(action)
             if done:
                 break

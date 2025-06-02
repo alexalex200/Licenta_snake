@@ -48,7 +48,7 @@ class Memory:
 class Linear_Network(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, lr=0.0005, genetic=False):
         super().__init__()
-
+        self.dimensions = [input_size] + hidden_size + [output_size]
         self.actor = nn.Sequential(
             nn.Linear(input_size, hidden_size[0]),
             nn.ReLU(),
