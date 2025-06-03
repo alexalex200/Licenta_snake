@@ -1,20 +1,26 @@
 import pygame
+import torch
 
 import game
 from images import *
 
 BACKGROUND_COLOR = (34, 34, 34)
 GRID_COLOR = (60, 61, 55)
+GREEN =(32, 194, 14)
 
+
+def cap_in_bounds(value, min_value, max_value):
+    return max(min_value, min(value, max_value))
 
 class Draw:
     def __init__(self, game, model):
         pygame.init()
+        self.font = pygame.font.Font(None, 30)
 
         self.game = game
         self.model = model
-        self.width = 1280
-        self.height = 720
+        self.width = 1600
+        self.height = 900
         self.cell_size = 600 // self.game.board_size[0]
         self.screen = pygame.display.set_mode((self.width, self.height))
         self.fps = pygame.time.Clock()
@@ -24,9 +30,9 @@ class Draw:
 
     def draw_grid(self, start_x=0, start_y=0):
         for i in range(0, self.game.board_size[0] + 1):
-            pygame.draw.line(self.screen, GRID_COLOR, (i*self.cell_size + start_x, 0 + start_y), (i*self.cell_size + start_x, self.game.board_size[1] * self.cell_size + start_y))
+            pygame.draw.line(self.screen, GRID_COLOR, (i*self.cell_size + start_x, 0 + start_y), (i*self.cell_size + start_x, self.game.board_size[1] * self.cell_size + start_y), 2)
         for i in range(0, self.game.board_size[1] + 1):
-            pygame.draw.line(self.screen, GRID_COLOR, (0 + start_x, i * self.cell_size + start_y), (self.game.board_size[0] * self.cell_size + start_x, i * self.cell_size + start_y))
+            pygame.draw.line(self.screen, GRID_COLOR, (0 + start_x, i * self.cell_size + start_y), (self.game.board_size[0] * self.cell_size + start_x, i * self.cell_size + start_y), 2)
 
     def draw_snake(self, start_x=0, start_y=0):
 
@@ -68,34 +74,82 @@ class Draw:
     #             self.screen.blit(pygame.image.frombuffer(self.grass.tobytes(), self.grass.shape[1::-1], "RGBA"),
     #                              (i * cell_size, j * cell_size))
 
-    def draw_network(self):
-        layer_gap = 680// (len(self.model.dimensions) + 1)
+
+    def draw_vision(self, start_x=0, start_y=0):
+        head_x, head_y = self.game.snake.body[0][0]
+        head_x = start_x + head_x * self.cell_size + self.cell_size // 2
+        head_y = start_y + head_y * self.cell_size + self.cell_size // 2
+        for apple_x, apple_y, x, y, is_wall in self.game.vision_for_draw:
+            x = start_x + x * self.cell_size + self.cell_size // 2
+            y = start_y + y * self.cell_size + self.cell_size // 2
+
+            if is_wall:
+                pygame.draw.line(self.screen, (255, 255, 255),
+                                 (head_x, head_y),
+                                 (x, y), 2)
+
+            else:
+                pygame.draw.line(self.screen, (255, 255, 0),(head_x, head_y), (x, y), 2)
+
+            if (apple_x, apple_y) != (0, 0):
+                pygame.draw.line(self.screen, (255, 0, 0),
+                                 (head_x, head_y),
+                                 (start_x + apple_x * self.cell_size + self.cell_size // 2,
+                                  start_y + apple_y * self.cell_size + self.cell_size // 2), 2)
+
+    def draw_network(self, input_layer, layers, weights):
+
+        layer_gap = (self.width - 600) // (len(self.model.dimensions) + 1)
         node_gap = self.height // (max(self.model.dimensions) + 2)
+
+        layers = [input_layer] + layers
+        for i in range(len(layers[-1])):
+            if layers[-1][i] != max(layers[-1]):
+                layers[-1][i] = 0
+
+        texts = ["wall", "apple", "snake", "head_up", "head_down", "head_left", "head_right", "tail_up", "tail_down", "tail_left", "tail_right"]
+
         for i in range(1, len(self.model.dimensions)):
             for j in range(self.model.dimensions[i - 1]):
                 for k in range(self.model.dimensions[i]):
-                    pygame.draw.line(self.screen, (255, 255, 255),
-                                     (i * layer_gap, j * node_gap + (self.height - node_gap * self.model.dimensions[i - 1]) // 2),
-                                     ((i + 1) * layer_gap, k * node_gap + (self.height - node_gap * self.model.dimensions[i]) // 2), 1)
+                    if layers[i - 1][j] > 0 and layers[i][k] > 0:
+                        pygame.draw.line(self.screen, GREEN,
+                                     (i * layer_gap + node_gap//3, j * node_gap + (self.height - node_gap * self.model.dimensions[i - 1]) // 2),
+                                     ((i + 1) * layer_gap - node_gap//3 , k * node_gap + (self.height - node_gap * self.model.dimensions[i]) // 2), 2)
+
         for i in range(1,len(self.model.dimensions) + 1):
             advantage = (self.height - node_gap * self.model.dimensions[i - 1])//2
             for j in range(self.model.dimensions[i - 1]):
-                pygame.draw.circle(self.screen, (255,255,255), (i * layer_gap, j * node_gap + advantage), node_gap // 3 + 1, 0)
-                pygame.draw.circle(self.screen, (255, 0, 0), (i * layer_gap, j * node_gap + advantage ), node_gap // 3, 0)
-
+                pygame.draw.circle(self.screen, GREEN, (i * layer_gap, j * node_gap + advantage), node_gap // 3 + 2, 0)
+                if layers[i - 1][j] > 0:
+                    if i == 1:
+                        self.screen.blit(self.font.render(texts[j//8 + j-25], False, GREEN),
+                                         ((i-0.5) * layer_gap, j * node_gap + advantage - 10))
+                    pygame.draw.circle(self.screen, GREEN, (i * layer_gap, j * node_gap + advantage), node_gap // 3, 0)
+                else:
+                    if i == 1:
+                        self.screen.blit(self.font.render(texts[j//8 + j-25], False, GRID_COLOR),
+                                         ((i-0.5) * layer_gap, j * node_gap + advantage - 10))
+                    pygame.draw.circle(self.screen, BACKGROUND_COLOR, (i * layer_gap, j * node_gap + advantage ), node_gap // 3, 0)
 
     def draw(self):
 
-        pygame.event.get()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.quit()
         # self.draw_background()
         # self.draw_puddle()
         self.screen.fill(BACKGROUND_COLOR)
-        self.draw_grid(680, 0)
-        self.draw_snake(680, 0)
-        self.draw_apple(680, 0)
-        self.draw_network()
+        self.draw_grid((self.width - 600), 0)
+        self.draw_vision((self.width - 600), 0)
+        self.draw_snake((self.width - 600), 0)
+        self.draw_apple((self.width - 600), 0)
+        weights, _ = self.model.get_weights_biases()
+        state = self.game.get_state()
+        state_tensor = torch.tensor(state, dtype=torch.float).to(self.model.device)
+        self.draw_network(state, self.model.get_values_of_layers(state_tensor), weights)
         pygame.display.update()
-        self.fps.tick(10)
+        self.fps.tick(5)
 
     def quit(self):
         pygame.quit()

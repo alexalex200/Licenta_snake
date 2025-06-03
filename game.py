@@ -1,8 +1,7 @@
 import random
 import math
 import numpy as np
-from draw_game import Draw
-import pygame
+from collections import deque
 
 
 class Snake:
@@ -94,6 +93,8 @@ class Game:
         self.snake.energy = board_size[0] * board_size[1]
         self.apples = [Apple(board_size, self.snake) for _ in range(num_apples)]
 
+        self.vision_for_draw = deque(maxlen=8)
+
     def reset(self):
         self.snake = Snake((self.board_size[0] // 2, self.board_size[1] // 2), (1, 0))
         self.snake.energy = self.board_size[0] * self.board_size[1]
@@ -117,25 +118,29 @@ class Game:
         len = 1
         is_wall = 0
         is_apple = 0
+        apple_x, apple_y = 0, 0
         is_body = 0
 
         while 0 <= x < self.board_size[0] and 0 <= y < self.board_size[1]:
             if collision_with_snake(self.snake.body, (x, y)):
                 is_body = 1.0 / len
+                self.vision_for_draw.append((apple_x, apple_y, x, y,False))
                 return is_wall, is_apple, is_body
             for apple in self.apples:
                 if (x, y) == (apple.x, apple.y):
                     is_apple = 1.0
+                    apple_x, apple_y = apple.x, apple.y
             x += dx
             y += dy
             len += 1
         is_wall = 1.0 / len
+        self.vision_for_draw.append((apple_x, apple_y, x, y, True))
         return is_wall, is_apple, is_body
 
     def get_state(self):
         w, a, b = [], [], []
         direction = self.snake.direction
-        for _ in range(8):
+        for i in range(8):
             dis_to_wall, is_apple, is_body = self.look_in_direction(direction)
             w.append(dis_to_wall)
             a.append(is_apple)

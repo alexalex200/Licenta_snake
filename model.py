@@ -70,6 +70,15 @@ class Linear_Network(nn.Module):
         dist = Categorical(dist)
         return dist
 
+    def get_values_of_layers(self, x):
+        values = []
+        for layer in self.actor:
+            if isinstance(layer, nn.Linear):
+                x = layer(x)
+                values.append(x.data.cpu().numpy())
+                x = F.relu(x)
+        return values
+
     def get_weights_biases(self):
         weights = []
         biases = []
