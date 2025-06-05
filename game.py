@@ -34,11 +34,15 @@ class Apple:
         self.x, self.y = self.spawn_new_apple(board_size, snake)
 
     def spawn_new_apple(self, board_size, snake):
-        while True:
-            x = random.randint(0, board_size[0] - 1)
-            y = random.randint(0, board_size[1] - 1)
-            if not collision_with_snake(snake.body, (x, y)):
-                return x, y
+        open_positions = []
+        for i in range(board_size[0]):
+            for j in range(board_size[1]):
+                if not collision_with_snake(snake.body, (i, j)):
+                    open_positions.append((i, j))
+        if len(open_positions) == 0:
+            return 0, 0
+        random.shuffle(open_positions)
+        return random.choice(open_positions)
 
 
 def collision_with_snake(snake_body, position):
@@ -90,7 +94,7 @@ class Game:
         self.board_size = board_size
         self.num_apples = num_apples
         self.snake = Snake((board_size[0] // 2, board_size[1] // 2), (1, 0))
-        self.snake.energy = board_size[0] * board_size[1]
+        self.snake.energy = board_size[0] * board_size[1] * 2
         self.apples = [Apple(board_size, self.snake) for _ in range(num_apples)]
 
         self.vision_for_draw = deque(maxlen=8)
@@ -134,7 +138,7 @@ class Game:
             y += dy
             len += 1
         is_wall = 1.0 / len
-        self.vision_for_draw.append((apple_x, apple_y, x, y, True))
+        self.vision_for_draw.append((apple_x, apple_y, x - dx * 0.5, y - dy * 0.5, True))
         return is_wall, is_apple, is_body
 
     def get_state(self):
@@ -146,6 +150,7 @@ class Game:
             a.append(is_apple)
             b.append(is_body)
             direction = next_direction(direction)
+
         h = [0, 0, 0, 0]
         if self.snake.direction == (-1, 0):
             h[0] = 1
@@ -167,7 +172,7 @@ class Game:
             t[3] = 1
 
         vision = list(np.concatenate((w, a, b, h, t)))
-        return np.array(vision, dtype=int)
+        return np.array(vision, dtype=np.float32)
 
     def step(self, action):
 
@@ -186,10 +191,10 @@ class Game:
         if collision_with_snake(self.snake.body[1:],
                                 self.snake.body[0][0]) or self.snake_out_of_bounds() or self.snake.energy <= 0:
             game_over = True
-            reward = -200
+            reward = -500
             return reward, game_over, self.snake.score
 
-        if len(self.snake.body) == self.board_size[0] * self.board_size[1] - 1:
+        if len(self.snake.body) == self.board_size[0] * self.board_size[1]:
             game_over = True
             reward = 1000
             return reward, game_over, self.snake.score
@@ -201,8 +206,8 @@ class Game:
             if self.snake.body[0][0] == (apple.x, apple.y):
                 self.snake.grow()
                 self.snake.score += 1
-                reward += 100 - self.snake.energy * 0.5
-                self.snake.energy = self.board_size[0] * self.board_size[1]
+                reward += 100 + self.snake.energy * 0.5
+                self.snake.energy = self.board_size[0] * self.board_size[1] * 2
                 apple.x, apple.y = apple.spawn_new_apple(self.board_size, self.snake)
 
         return reward, game_over, self.snake.score

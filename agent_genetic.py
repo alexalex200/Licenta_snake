@@ -9,12 +9,12 @@ from draw_game import Draw
 
 
 class Individual:
-    def __init__(self, n_actions, input_dims, mutation_rate=0.1):
+    def __init__(self, n_actions, input_dims, mutation_rate=0.05):
         self.mutation_rate = mutation_rate
         self.fitness = 0
         self.score = 0
 
-        self.model = Linear_Network(input_dims, [20, 12], n_actions, genetic=True)
+        self.model = Linear_Network(input_dims, [20, 12], n_actions, categorical=False)
 
     def calculate_fitness(self, steps, score):
         self.fitness = steps + ((2 ** score) + (score ** 2.1) * 500) - (
@@ -43,13 +43,13 @@ def roulette_selection(agents, num_parents):
 
 if __name__ == '__main__':
     num_generations = 1000
-    num_parents = 20
-    num_individuals = 100
+    num_parents = 100
+    num_individuals = 500
 
-    game = Game((10, 10), num_apples=1)
+    game = Game((6, 6), num_apples=1)
     individuals = [Individual(3, 32) for _ in range(num_individuals)]
-    # for individual in individuals:
-    #     individual.model.load("ga_best_model.pth")
+    for individual in individuals:
+        individual.model.load("ga_best_model.pth")
     best_fitness = 0
 
     for generation in range(num_generations):
@@ -69,7 +69,7 @@ if __name__ == '__main__':
         individuals.sort(key=lambda x: x.fitness, reverse=True)
         best_individuals = individuals[:num_parents]
         print(
-            f'Generation {generation}, Best fitness: {best_individuals[0].fitness}, Score: {best_individuals[0].score}')
+            f'Generation {generation}, Best fitness: {best_individuals[0].fitness}, Score: {best_individuals[0].score}, Mean score: {np.mean([ind.score for ind in best_individuals])}')
         if best_individuals[0].fitness >= best_fitness:
             best_fitness = best_individuals[0].fitness
             best_individuals[0].model.save('ga_best_model.pth')

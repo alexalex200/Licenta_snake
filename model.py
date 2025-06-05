@@ -46,7 +46,7 @@ class Memory:
 
 
 class Linear_Network(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, lr=0.0005, genetic=False):
+    def __init__(self, input_size, hidden_size, output_size, lr=0.0005, categorical=True):
         super().__init__()
         self.dimensions = [input_size] + hidden_size + [output_size]
         self.actor = nn.Sequential(
@@ -61,11 +61,11 @@ class Linear_Network(nn.Module):
         self.optimizer = optim.Adam(self.parameters(), lr=lr)
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.to(self.device)
-        self.genetic = genetic
+        self.categorical = categorical
 
     def forward(self, x):
         dist = self.actor(x)
-        if self.genetic:
+        if not self.categorical:
             return dist
         dist = Categorical(dist)
         return dist

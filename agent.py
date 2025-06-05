@@ -25,12 +25,12 @@ class Agent:
         self.memory.store_memory(state, action, prob, val, reward, done)
 
     def save_models(self, name="ppo_agent"):
-        torch.save(self.actor.state_dict(), f"{name}_actor.pth")
-        torch.save(self.critic.state_dict(), f"{name}_critic.pth")
+        self.actor.save(name)
+        self.critic.save(name)
 
     def load_models(self, name="ppo_agent"):
-        self.actor.load_state_dict(torch.load(f"{name}_actor.pth"))
-        self.critic.load_state_dict(torch.load(f"{name}_critic.pth"))
+        self.actor.load(name)
+        self.critic.load(name)
 
     def choose_action(self, observation):
         state = torch.tensor(observation, dtype=torch.float).to(self.actor.device)
@@ -102,8 +102,6 @@ if __name__ == "__main__":
     n_epochs = 3
     lr = 0.0005
     agent = Agent(n_actions=3, input_dims=32, batch_size=batch_size, n_epochs=n_epochs, lr=lr)
-    agent.load_models(name="ppo_agent")
-
     n_games = 10000
 
     best_score = 0
