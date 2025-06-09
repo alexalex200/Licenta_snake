@@ -59,7 +59,7 @@ class Linear_Network(nn.Module):
         )
 
         self.optimizer = optim.Adam(self.parameters(), lr=lr)
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.to(self.device)
         self.categorical = categorical
 
@@ -108,7 +108,7 @@ class Linear_Network(nn.Module):
         model_folder_path = './models'
         file_name = os.path.join(model_folder_path, file_name)
         if os.path.exists(file_name):
-            self.load_state_dict(torch.load(file_name))
+            self.load_state_dict(torch.load(file_name, weights_only=False))
             self.eval()
         else:
             raise FileNotFoundError(f"Model file {file_name} not found.")
@@ -145,7 +145,7 @@ class Critic_Network(nn.Module):
         model_folder_path = './models'
         file_name = os.path.join(model_folder_path, file_name)
         if os.path.exists(file_name):
-            self.load_state_dict(torch.load(file_name))
+            self.load_state_dict(torch.load(file_name, weights_only=False))
             self.eval()
         else:
             raise FileNotFoundError(f"Critic file {file_name} not found.")

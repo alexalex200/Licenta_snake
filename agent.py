@@ -1,5 +1,5 @@
 import os
-
+from plots import Plot
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 import torch
 import numpy as np
@@ -25,12 +25,12 @@ class Agent:
         self.memory.store_memory(state, action, prob, val, reward, done)
 
     def save_models(self, name="ppo_agent"):
-        self.actor.save(name)
-        self.critic.save(name)
+        self.actor.save(name+"_actor.pth")
+        self.critic.save(name+"_critic.pth")
 
     def load_models(self, name="ppo_agent"):
-        self.actor.load(name)
-        self.critic.load(name)
+        self.actor.load(name+"_actor.pth")
+        self.critic.load(name+"_critic.pth")
 
     def choose_action(self, observation):
         state = torch.tensor(observation, dtype=torch.float).to(self.actor.device)
@@ -102,7 +102,8 @@ if __name__ == "__main__":
     n_epochs = 3
     lr = 0.0005
     agent = Agent(n_actions=3, input_dims=32, batch_size=batch_size, n_epochs=n_epochs, lr=lr)
-    n_games = 10000
+    plot = Plot()
+    n_games = 20000
 
     best_score = 0
     score_history = []
@@ -129,7 +130,8 @@ if __name__ == "__main__":
             observation = observation_
         score_history.append(score)
         avg_score = np.mean(score_history[-100:])
-
+        plot.add_ppo(score, game.snake.steps)
+        plot.save_data()
         if score >= best_score:
             best_score = score
             agent.save_models(name="ppo_agent")

@@ -1,16 +1,18 @@
 import pygame
 import torch
-
-import game
 from images import *
 
 BACKGROUND_COLOR = (34, 34, 34)
 GRID_COLOR = (60, 61, 55)
 GREEN =(32, 194, 14)
+RED = (128, 0, 0)
+YELLOW = (179, 179, 0)
+WHITE = (211, 211, 211)
 
 
 def cap_in_bounds(value, min_value, max_value):
     return max(min_value, min(value, max_value))
+
 
 class Draw:
     def __init__(self, game, model):
@@ -68,13 +70,6 @@ class Draw:
             self.screen.blit(pygame.image.frombuffer(self.apple.tobytes(), self.apple.shape[1::-1], "RGBA"),
                              (start_x + apple.x * self.cell_size,start_y + apple.y * self.cell_size))
 
-    # def draw_background(self):
-    #     for i in range(self.width // cell_size):
-    #         for j in range(self.height // cell_size):
-    #             self.screen.blit(pygame.image.frombuffer(self.grass.tobytes(), self.grass.shape[1::-1], "RGBA"),
-    #                              (i * cell_size, j * cell_size))
-
-
     def draw_vision(self, start_x=0, start_y=0):
         self.game.get_state()
         head_x, head_y = self.game.snake.body[0][0]
@@ -85,13 +80,33 @@ class Draw:
             y = start_y + y * self.cell_size + self.cell_size // 2
 
             if is_wall:
-                pygame.draw.line(self.screen, (255, 255, 255),
+                pygame.draw.line(self.screen, WHITE,
                                  (head_x, head_y),
                                  (x, y), 2)
+                if x - start_x == 0 or x - start_x == self.game.board_size[0] * self.cell_size:
+                    pygame.draw.line(self.screen, WHITE, (x, y - self.cell_size // 4),
+                                     (x, y + self.cell_size // 4), 2)
+                if y - start_y == 0 or y - start_y == self.game.board_size[1] * self.cell_size:
+                    pygame.draw.line(self.screen, WHITE, (x - self.cell_size // 4, y),
+                                     (x + self.cell_size // 4, y), 2)
+
+                pygame.draw.line(self.screen, BACKGROUND_COLOR, (start_x - 1, start_y),
+                                 (start_x - self.cell_size//4, start_y), 2)
+
+                pygame.draw.line(self.screen, BACKGROUND_COLOR, (start_x - 1, start_y + self.cell_size * self.game.board_size[1]),
+                                 (start_x - self.cell_size // 4, start_y + self.cell_size * self.game.board_size[1]), 2)
+
+                pygame.draw.line(self.screen, BACKGROUND_COLOR,
+                                 (start_x , start_y + self.cell_size * self.game.board_size[1] + 1),
+                                 (start_x, start_y + self.cell_size * self.game.board_size[1] + self.cell_size // 4), 2)
+
+                pygame.draw.line(self.screen, BACKGROUND_COLOR,
+                                 (start_x + self.cell_size * self.game.board_size[0], start_y + self.cell_size * self.game.board_size[1] + 1),
+                                 (start_x + self.cell_size * self.game.board_size[0], start_y + self.cell_size * self.game.board_size[1] + self.cell_size // 4), 2)
 
             else:
-                pygame.draw.line(self.screen, (255, 255, 0),(head_x, head_y), (x, y), 2)
-                pygame.draw.polygon(self.screen, (255, 255, 0), [(x - self.cell_size // 2, y - self.cell_size // 2),
+                pygame.draw.line(self.screen, YELLOW,(head_x, head_y), (x, y), 2)
+                pygame.draw.polygon(self.screen, YELLOW, [(x - self.cell_size // 2, y - self.cell_size // 2),
                                                                (x + self.cell_size // 2, y - self.cell_size // 2),
                                                                (x + self.cell_size // 2, y + self.cell_size // 2),
                                                                (x - self.cell_size // 2, y + self.cell_size // 2)], 2)
@@ -101,13 +116,13 @@ class Draw:
                                      (x + self.cell_size // 2 - 1, y + self.cell_size // 2 - 1),
                                      (x - self.cell_size // 2 + 2, y + self.cell_size // 2 - 1)])
 
-            if (apple_x, apple_y) != (0, 0):
+            if (apple_x, apple_y) != (-1, -1):
                 x = start_x + apple_x * self.cell_size + self.cell_size // 2
                 y = start_y + apple_y * self.cell_size + self.cell_size // 2
-                pygame.draw.line(self.screen, (255, 0, 0),
+                pygame.draw.line(self.screen, RED,
                                  (head_x, head_y),
                                  (x,y), 2)
-                pygame.draw.polygon(self.screen, (255, 0, 0),[(x - self.cell_size // 2, y - self.cell_size // 2),
+                pygame.draw.polygon(self.screen, RED,[(x - self.cell_size // 2, y - self.cell_size // 2),
                                                                (x + self.cell_size // 2, y - self.cell_size // 2),
                                                                (x + self.cell_size // 2, y + self.cell_size // 2),
                                                                (x - self.cell_size // 2, y + self.cell_size // 2)], 2)
@@ -135,7 +150,7 @@ class Draw:
                     if layers[i - 1][j] > 0 and layers[i][k] > 0:
                         pygame.draw.line(self.screen, GREEN,
                                      (i * layer_gap + node_gap//3, j * node_gap + (self.height - node_gap * self.model.dimensions[i - 1]) // 2),
-                                     ((i + 1) * layer_gap - node_gap//3 , k * node_gap + (self.height - node_gap * self.model.dimensions[i]) // 2), 2)
+                                     ((i + 1) * layer_gap - node_gap//3 , k * node_gap + (self.height - node_gap * self.model.dimensions[i]) // 2), 1)
 
         for i in range(1,len(self.model.dimensions) + 1):
             advantage = (self.height - node_gap * self.model.dimensions[i - 1])//2
@@ -163,8 +178,6 @@ class Draw:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.quit()
-        # self.draw_background()
-        # self.draw_puddle()
         self.screen.fill(BACKGROUND_COLOR)
         self.draw_grid((self.width - 601), 1)
         self.draw_vision((self.width - 601), 1)
@@ -175,7 +188,8 @@ class Draw:
         state_tensor = torch.tensor(state, dtype=torch.float).to(self.model.device)
         self.draw_network(state, self.model.get_values_of_layers(state_tensor), weights)
         pygame.display.update()
-        self.fps.tick(1)
+        self.fps.tick(20)
+        # input("Press Enter to continue...")
 
     def quit(self):
         pygame.quit()

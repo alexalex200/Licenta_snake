@@ -122,7 +122,7 @@ class Game:
         len = 1
         is_wall = 0
         is_apple = 0
-        apple_x, apple_y = 0, 0
+        apple_x, apple_y = -1, -1
         is_body = 0
 
         while 0 <= x < self.board_size[0] and 0 <= y < self.board_size[1]:
