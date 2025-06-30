@@ -17,7 +17,7 @@ def choose_action(x, y, board_size):
 
 if __name__ == "__main__":
     game = Game((6, 6), num_apples=1)
-    draw = Draw(game, None)
+    draw = Draw(game, None, None)
     steps = 0
     n = 0
 

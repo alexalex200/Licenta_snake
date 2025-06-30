@@ -168,5 +168,5 @@ class Plot:
 
 if __name__ == "__main__":
     plot = Plot()
-    plot.plot_columns()
+    plot.plot_training()
 

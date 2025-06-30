@@ -40,7 +40,7 @@ class Apple:
                 if not collision_with_snake(snake.body, (i, j)):
                     open_positions.append((i, j))
         if len(open_positions) == 0:
-            return 0, 0
+            return 0, -1
         random.shuffle(open_positions)
         return random.choice(open_positions)
 

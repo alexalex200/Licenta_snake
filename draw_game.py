@@ -9,18 +9,28 @@ RED = (128, 0, 0)
 YELLOW = (179, 179, 0)
 WHITE = (211, 211, 211)
 
+# BACKGROUND_COLOR = (221, 221, 221)
+# GRID_COLOR = (60, 61, 55)
+# GREEN = (60, 61, 55)
+# RED = (255, 0, 0)
+# YELLOW = (0, 255, 0)
+# WHITE = (34, 34, 34)
+
 
 def cap_in_bounds(value, min_value, max_value):
     return max(min_value, min(value, max_value))
 
 
 class Draw:
-    def __init__(self, game, model):
+    def __init__(self, game, rl_model, ga_model):
         pygame.init()
         self.font = pygame.font.Font(None, 30)
 
         self.game = game
-        self.model = model
+        self.ga_model = ga_model
+        self.rl_model = rl_model
+        self.model = rl_model
+        self.model_switch = True
         self.width = 1600
         self.height = 900
         self.cell_size = 600 // self.game.board_size[0]
@@ -29,6 +39,8 @@ class Draw:
         pygame.display.set_caption("Snake")
 
         self.apple, self.grass, self.mud, self.head, self.body, self.tail, self.bent = load_images(self.cell_size)
+
+        self.vision = False
 
     def draw_grid(self, start_x=0, start_y=0):
         for i in range(0, self.game.board_size[0] + 1):
@@ -173,23 +185,90 @@ class Draw:
                                          ((i+0.2) * layer_gap, j * node_gap + advantage - 10))
                     pygame.draw.circle(self.screen, BACKGROUND_COLOR, (i * layer_gap, j * node_gap + advantage ), node_gap // 3, 0)
 
+    def vision_toggle(self):
+
+        position_x = self.width - 599
+        position_y = 610
+        pygame.draw.rect(self.screen, GRID_COLOR, (position_x - 2, position_y - 2, 27, 27))
+        pygame.draw.rect(self.screen, GREEN if self.vision else BACKGROUND_COLOR, (position_x , position_y , 23, 23))
+        font = pygame.font.Font(None, 25)
+        self.screen.blit(font.render("Vision ON/OFF", False, GREEN if self.vision else GRID_COLOR), (position_x + 29, position_y + 4))
+
+    def model_toggle(self):
+
+        position_x = self.width - 325
+        position_y = 610
+
+        font = pygame.font.Font(None, 25)
+        pygame.draw.rect(self.screen, GRID_COLOR, (position_x - 2, position_y - 2, 150, 27))
+        pygame.draw.rect(self.screen, GREEN if self.model_switch else BACKGROUND_COLOR, (position_x, position_y, 146, 23))
+        self.screen.blit(font.render("RL", False, BACKGROUND_COLOR if self.model_switch else GRID_COLOR), (position_x + 65, position_y + 4))
+
+        pygame.draw.rect(self.screen, GRID_COLOR, (position_x + 150, position_y - 2, 150, 27))
+        pygame.draw.rect(self.screen, GREEN if not self.model_switch else BACKGROUND_COLOR, (position_x + 152, position_y, 146, 23))
+        self.screen.blit(font.render("GA", False, BACKGROUND_COLOR if not self.model_switch else GRID_COLOR), (position_x + 215, position_y + 4))
+
+    def draw_info(self):
+
+        position_x = self.width - 510
+        position_y = 700
+
+        font = pygame.font.Font(None, 40)
+        self.screen.blit(font.render("Score: " + str(self.game.snake.score) + " | Steps: " + str(self.game.snake.steps) + " | Energy: " + str(self.game.snake.energy), False, (255,255,255)), (position_x, position_y))
+
+
+    def win_flicker(self):
+        position_x = self.width - 510
+        position_y = 700
+        font = pygame.font.Font(None, 40)
+        pygame.draw.rect(self.screen, BACKGROUND_COLOR, (position_x - 2, position_y - 2, 600, 50))
+
+        for i in range(10):
+            self.screen.blit(font.render("Score: " + str(self.game.snake.score) + " | Steps: " + str(
+                self.game.snake.steps) + " | Energy: " + str(self.game.snake.energy), False, (255, 255, 255)),
+                             (position_x, position_y))
+            pygame.display.update()
+            pygame.time.wait(250)
+            self.screen.blit(font.render("Score: " + str(self.game.snake.score) + " | Steps: " + str(
+                self.game.snake.steps) + " | Energy: " + str(self.game.snake.energy), False, GRID_COLOR),
+                             (position_x, position_y))
+            pygame.display.update()
+            pygame.time.wait(250)
+
     def draw(self):
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.quit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if pygame.Rect(self.width - 600, 610, 23, 23).collidepoint(event.pos):
+                    self.vision = not self.vision
+                if pygame.Rect(self.width - 325, 610, 146, 23).collidepoint(event.pos) and not self.model_switch:
+                    self.model = self.rl_model
+                    self.model_switch = True
+                    self.game.reset()
+                elif pygame.Rect(self.width - 175, 610, 146, 23).collidepoint(event.pos) and self.model_switch:
+                    self.model = self.ga_model
+                    self.model_switch = False
+                    self.game.reset()
+
         self.screen.fill(BACKGROUND_COLOR)
         self.draw_grid((self.width - 601), 1)
-        self.draw_vision((self.width - 601), 1)
+        if self.vision:
+            self.draw_vision((self.width - 601), 1)
         self.draw_snake((self.width - 601), 1)
         self.draw_apple((self.width - 601), 1)
         weights, _ = self.model.get_weights_biases()
         state = self.game.get_state()
         state_tensor = torch.tensor(state, dtype=torch.float).to(self.model.device)
         self.draw_network(state, self.model.get_values_of_layers(state_tensor), weights)
+
+        self.vision_toggle()
+        self.model_toggle()
+        self.draw_info()
+
         pygame.display.update()
-        self.fps.tick(20)
-        # input("Press Enter to continue...")
+        self.fps.tick(10)
 
     def quit(self):
         pygame.quit()

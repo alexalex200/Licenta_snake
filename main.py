@@ -4,6 +4,7 @@ from draw_game import Draw
 from agent import Agent
 from agent_genetic import Individual
 from plots import Plot
+import keyboard
 import torch
 
 if __name__ == "__main__":
@@ -20,28 +21,25 @@ if __name__ == "__main__":
     individual.model.load("ga_best_model_copy.pth")
     individual.model.categorical = False
 
-    #draw = Draw(game, individual.model)
 
-    n = 0
-    nn = 0
+    draw = Draw(game, agent.actor, individual.model)
+
     running = True
     while running:
         game.reset()
         while True:
-            #draw.draw()
+            draw.draw()
             state = game.get_state()
             state = torch.tensor(state, dtype=torch.float).to(individual.model.device)
-            action = agent.actor(state)
+            if draw.model_switch:
+                action = agent.actor(state)
+            else:
+                action = individual.model(state)
             action = torch.argmax(action, -1)
             _, done,score = game.step(action)
             if done:
-                if score == 33:
-                    nn += 1
-                    plot.add_ppo(game.snake.score, game.snake.steps)
+                if score == game.board_size[0] * game.board_size[1] - 3:
+                    draw.win_flicker()
                 break
-        n += 1
-        if nn == 1000:
-            print(n)
-            break
-    plot.save_data()
+    #plot.save_data()
 
