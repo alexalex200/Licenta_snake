@@ -154,7 +154,7 @@ class Draw:
             if layers[-1][i] != max(layers[-1]):
                 layers[-1][i] = 0
 
-        texts = ["wall", "apple", "snake", "head left", "head right", "head up", "head down", "tail left", "tail right", "tail up", "tail down", "left turn", "straight", "right turn", "score", "steps", "direction", "length"]
+        texts = ["perete", "măr", "șarpe", "cap stânga", "cap dreapta", "cap sus", "cap jos", "coadă stânga", "coadă dreapta", "coadă sus", "coadă jos", "stânga", "înainte", "dreapta", "scor", "pași", "direcție", "lungine"]
 
         for i in range(1, len(self.model.dimensions)):
             for j in range(self.model.dimensions[i - 1]):
@@ -192,7 +192,7 @@ class Draw:
         pygame.draw.rect(self.screen, GRID_COLOR, (position_x - 2, position_y - 2, 27, 27))
         pygame.draw.rect(self.screen, GREEN if self.vision else BACKGROUND_COLOR, (position_x , position_y , 23, 23))
         font = pygame.font.Font(None, 25)
-        self.screen.blit(font.render("Vision ON/OFF", False, GREEN if self.vision else GRID_COLOR), (position_x + 29, position_y + 4))
+        self.screen.blit(font.render("Viziune PORNIT/OPRIT", False, GREEN if self.vision else GRID_COLOR), (position_x + 29, position_y + 4))
 
     def model_toggle(self):
 
@@ -214,7 +214,7 @@ class Draw:
         position_y = 700
 
         font = pygame.font.Font(None, 40)
-        self.screen.blit(font.render("Score: " + str(self.game.snake.score) + " | Steps: " + str(self.game.snake.steps) + " | Energy: " + str(self.game.snake.energy), False, (255,255,255)), (position_x, position_y))
+        self.screen.blit(font.render("Scor: " + str(self.game.snake.score) + " | Pași: " + str(self.game.snake.steps) + " | Energie: " + str(self.game.snake.energy), False, (255,255,255)), (position_x, position_y))
 
 
     def win_flicker(self):
@@ -224,13 +224,13 @@ class Draw:
         pygame.draw.rect(self.screen, BACKGROUND_COLOR, (position_x - 2, position_y - 2, 600, 50))
 
         for i in range(10):
-            self.screen.blit(font.render("Score: " + str(self.game.snake.score) + " | Steps: " + str(
-                self.game.snake.steps) + " | Energy: " + str(self.game.snake.energy), False, (255, 255, 255)),
+            self.screen.blit(font.render("Scor: " + str(self.game.snake.score) + " | Pași: " + str(
+                self.game.snake.steps) + " | Energie: " + str(self.game.snake.energy), False, (255, 255, 255)),
                              (position_x, position_y))
             pygame.display.update()
             pygame.time.wait(250)
-            self.screen.blit(font.render("Score: " + str(self.game.snake.score) + " | Steps: " + str(
-                self.game.snake.steps) + " | Energy: " + str(self.game.snake.energy), False, GRID_COLOR),
+            self.screen.blit(font.render("Scor: " + str(self.game.snake.score) + " | Pași: " + str(
+                self.game.snake.steps) + " | Energie: " + str(self.game.snake.energy), False, GRID_COLOR),
                              (position_x, position_y))
             pygame.display.update()
             pygame.time.wait(250)
@@ -268,7 +268,7 @@ class Draw:
         self.draw_info()
 
         pygame.display.update()
-        self.fps.tick(10)
+        self.fps.tick(7)
 
     def quit(self):
         pygame.quit()
