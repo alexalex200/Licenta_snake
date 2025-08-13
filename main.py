@@ -1,10 +1,8 @@
-import pygame
 from game import Game
 from draw_game import Draw
 from agent import Agent
 from agent_genetic import Individual
 from plots import Plot
-import keyboard
 import torch
 
 if __name__ == "__main__":

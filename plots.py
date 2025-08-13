@@ -2,7 +2,9 @@ import os
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.io as pio
+
 pio.renderers.default = 'browser'
+
 
 class Plot:
     def __init__(self):
@@ -62,7 +64,7 @@ class Plot:
         self.load_data()
         list_for_plot = []
         for i in range(0, len(self.score_ppo), 20):
-            list_for_plot.append(sum(self.score_ppo[i:i + 20])//20)
+            list_for_plot.append(sum(self.score_ppo[i:i + 20]) // 20)
 
         # fig = px.line(
         #     x=list(range(len(list_for_plot))),
@@ -82,7 +84,7 @@ class Plot:
             title_font_size=60,  # Titlu
             font=dict(size=40),  # Text general
             xaxis=dict(title_font_size=40, tickfont_size=40),  # Axe X
-            yaxis=dict(title_font_size=40 , tickfont_size=40)  # Axe Y
+            yaxis=dict(title_font_size=40, tickfont_size=40)  # Axe Y
         )
 
         fig2.show()
@@ -91,13 +93,13 @@ class Plot:
         self.load_data()
 
         plot_ppo = []
-        for i in range(0, len(self.score_ppo)-5):
+        for i in range(0, len(self.score_ppo) - 5):
             plot_ppo.append(sum(self.score_ppo[i:i + 5]) // 5)
         for i in range(5):
             plot_ppo.append(plot_ppo[-1])
 
         plot_ga = []
-        for i in range(0, len(self.score_ga)-5):
+        for i in range(0, len(self.score_ga) - 5):
             plot_ga.append(sum(self.score_ga[i:i + 5]) // 5)
         for i in range(5):
             plot_ga.append(plot_ga[-1])
@@ -144,13 +146,13 @@ class Plot:
         fig.show()
 
     def plot_columns(self):
-        #ga7815
-        #ppo1857
+        # ga7815
+        # ppo1857
         self.load_data()
 
         fig = px.bar(
             x=['PPO', 'GA', 'Naiv'],
-            y=[sum(self.steps_ppo)/1000, sum(self.steps_ga)/1000, sum(self.score_naiv)/1000],
+            y=[sum(self.steps_ppo) / 1000, sum(self.steps_ga) / 1000, sum(self.score_naiv) / 1000],
             labels={'x': 'Algoritmi', 'y': 'Numar pasi'},
             title='Numar pasi mediu pentru finalizarea cu success a jocului',
         )
@@ -169,4 +171,3 @@ class Plot:
 if __name__ == "__main__":
     plot = Plot()
     plot.plot_training()
-

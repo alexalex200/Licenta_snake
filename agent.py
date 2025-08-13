@@ -1,5 +1,6 @@
 import os
 from plots import Plot
+
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 import torch
 import numpy as np
@@ -25,12 +26,12 @@ class Agent:
         self.memory.store_memory(state, action, prob, val, reward, done)
 
     def save_models(self, name="ppo_agent"):
-        self.actor.save(name+"_actor.pth")
-        self.critic.save(name+"_critic.pth")
+        self.actor.save(name + "_actor.pth")
+        self.critic.save(name + "_critic.pth")
 
     def load_models(self, name="ppo_agent"):
-        self.actor.load(name+"_actor.pth")
-        self.critic.load(name+"_critic.pth")
+        self.actor.load(name + "_actor.pth")
+        self.critic.load(name + "_critic.pth")
 
     def choose_action(self, observation):
         state = torch.tensor(observation, dtype=torch.float).to(self.actor.device)

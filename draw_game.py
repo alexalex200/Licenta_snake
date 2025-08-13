@@ -4,10 +4,11 @@ from images import *
 
 BACKGROUND_COLOR = (34, 34, 34)
 GRID_COLOR = (60, 61, 55)
-GREEN =(32, 194, 14)
+GREEN = (32, 194, 14)
 RED = (128, 0, 0)
 YELLOW = (179, 179, 0)
 WHITE = (211, 211, 211)
+
 
 # BACKGROUND_COLOR = (221, 221, 221)
 # GRID_COLOR = (60, 61, 55)
@@ -44,9 +45,11 @@ class Draw:
 
     def draw_grid(self, start_x=0, start_y=0):
         for i in range(0, self.game.board_size[0] + 1):
-            pygame.draw.line(self.screen, GRID_COLOR, (i*self.cell_size + start_x, 0 + start_y), (i*self.cell_size + start_x, self.game.board_size[1] * self.cell_size + start_y), 2)
+            pygame.draw.line(self.screen, GRID_COLOR, (i * self.cell_size + start_x, 0 + start_y),
+                             (i * self.cell_size + start_x, self.game.board_size[1] * self.cell_size + start_y), 2)
         for i in range(0, self.game.board_size[1] + 1):
-            pygame.draw.line(self.screen, GRID_COLOR, (0 + start_x, i * self.cell_size + start_y), (self.game.board_size[0] * self.cell_size + start_x, i * self.cell_size + start_y), 2)
+            pygame.draw.line(self.screen, GRID_COLOR, (0 + start_x, i * self.cell_size + start_y),
+                             (self.game.board_size[0] * self.cell_size + start_x, i * self.cell_size + start_y), 2)
 
     def draw_snake(self, start_x=0, start_y=0):
 
@@ -54,7 +57,8 @@ class Draw:
         snake = self.game.snake
         head_img = get_head_direction(self.head, snake.direction[0], snake.direction[1])
         self.screen.blit(pygame.image.frombuffer(head_img.tobytes(), head_img.shape[1::-1], "RGBA"),
-                         (start_x + snake.body[0][0][0] * self.cell_size,start_y + snake.body[0][0][1] * self.cell_size))
+                         (start_x + snake.body[0][0][0] * self.cell_size,
+                          start_y + snake.body[0][0][1] * self.cell_size))
 
         for i, body_part in enumerate(snake.body):
             if i != 0 and i != len(snake.body) - 1:
@@ -67,7 +71,8 @@ class Draw:
                     body_img = get_body_direction(self.body, body_part[1][0], body_part[1][1])
 
                 self.screen.blit(pygame.image.frombuffer(body_img.tobytes(), body_img.shape[1::-1], "RGBA"),
-                                 (start_x + body_part[0][0] * self.cell_size,start_y + body_part[0][1] * self.cell_size))
+                                 (start_x + body_part[0][0] * self.cell_size,
+                                  start_y + body_part[0][1] * self.cell_size))
 
             if tail:
                 tail_image = get_tail_direction(self.tail, snake.body[-2][1][0], snake.body[-2][1][1])
@@ -75,12 +80,13 @@ class Draw:
             else:
                 tail_image = get_tail_direction(self.tail, snake.body[-2][1][0], snake.body[-2][1][1])
             self.screen.blit(pygame.image.frombuffer(tail_image.tobytes(), tail_image.shape[1::-1], "RGBA"),
-                             (start_x + snake.body[-1][0][0] * self.cell_size,start_y + snake.body[-1][0][1] * self.cell_size))
+                             (start_x + snake.body[-1][0][0] * self.cell_size,
+                              start_y + snake.body[-1][0][1] * self.cell_size))
 
     def draw_apple(self, start_x=0, start_y=0):
         for apple in self.game.apples:
             self.screen.blit(pygame.image.frombuffer(self.apple.tobytes(), self.apple.shape[1::-1], "RGBA"),
-                             (start_x + apple.x * self.cell_size,start_y + apple.y * self.cell_size))
+                             (start_x + apple.x * self.cell_size, start_y + apple.y * self.cell_size))
 
     def draw_vision(self, start_x=0, start_y=0):
         self.game.get_state()
@@ -103,25 +109,28 @@ class Draw:
                                      (x + self.cell_size // 4, y), 2)
 
                 pygame.draw.line(self.screen, BACKGROUND_COLOR, (start_x - 1, start_y),
-                                 (start_x - self.cell_size//4, start_y), 2)
+                                 (start_x - self.cell_size // 4, start_y), 2)
 
-                pygame.draw.line(self.screen, BACKGROUND_COLOR, (start_x - 1, start_y + self.cell_size * self.game.board_size[1]),
+                pygame.draw.line(self.screen, BACKGROUND_COLOR,
+                                 (start_x - 1, start_y + self.cell_size * self.game.board_size[1]),
                                  (start_x - self.cell_size // 4, start_y + self.cell_size * self.game.board_size[1]), 2)
 
                 pygame.draw.line(self.screen, BACKGROUND_COLOR,
-                                 (start_x , start_y + self.cell_size * self.game.board_size[1] + 1),
+                                 (start_x, start_y + self.cell_size * self.game.board_size[1] + 1),
                                  (start_x, start_y + self.cell_size * self.game.board_size[1] + self.cell_size // 4), 2)
 
                 pygame.draw.line(self.screen, BACKGROUND_COLOR,
-                                 (start_x + self.cell_size * self.game.board_size[0], start_y + self.cell_size * self.game.board_size[1] + 1),
-                                 (start_x + self.cell_size * self.game.board_size[0], start_y + self.cell_size * self.game.board_size[1] + self.cell_size // 4), 2)
+                                 (start_x + self.cell_size * self.game.board_size[0],
+                                  start_y + self.cell_size * self.game.board_size[1] + 1),
+                                 (start_x + self.cell_size * self.game.board_size[0],
+                                  start_y + self.cell_size * self.game.board_size[1] + self.cell_size // 4), 2)
 
             else:
-                pygame.draw.line(self.screen, YELLOW,(head_x, head_y), (x, y), 2)
+                pygame.draw.line(self.screen, YELLOW, (head_x, head_y), (x, y), 2)
                 pygame.draw.polygon(self.screen, YELLOW, [(x - self.cell_size // 2, y - self.cell_size // 2),
-                                                               (x + self.cell_size // 2, y - self.cell_size // 2),
-                                                               (x + self.cell_size // 2, y + self.cell_size // 2),
-                                                               (x - self.cell_size // 2, y + self.cell_size // 2)], 2)
+                                                          (x + self.cell_size // 2, y - self.cell_size // 2),
+                                                          (x + self.cell_size // 2, y + self.cell_size // 2),
+                                                          (x - self.cell_size // 2, y + self.cell_size // 2)], 2)
                 pygame.draw.polygon(self.screen, BACKGROUND_COLOR,
                                     [(x - self.cell_size // 2 + 2, y - self.cell_size // 2 + 2),
                                      (x + self.cell_size // 2 - 1, y - self.cell_size // 2 + 2),
@@ -133,11 +142,11 @@ class Draw:
                 y = start_y + apple_y * self.cell_size + self.cell_size // 2
                 pygame.draw.line(self.screen, RED,
                                  (head_x, head_y),
-                                 (x,y), 2)
-                pygame.draw.polygon(self.screen, RED,[(x - self.cell_size // 2, y - self.cell_size // 2),
-                                                               (x + self.cell_size // 2, y - self.cell_size // 2),
-                                                               (x + self.cell_size // 2, y + self.cell_size // 2),
-                                                               (x - self.cell_size // 2, y + self.cell_size // 2)], 2)
+                                 (x, y), 2)
+                pygame.draw.polygon(self.screen, RED, [(x - self.cell_size // 2, y - self.cell_size // 2),
+                                                       (x + self.cell_size // 2, y - self.cell_size // 2),
+                                                       (x + self.cell_size // 2, y + self.cell_size // 2),
+                                                       (x - self.cell_size // 2, y + self.cell_size // 2)], 2)
                 pygame.draw.polygon(self.screen, BACKGROUND_COLOR,
                                     [(x - self.cell_size // 2 + 2, y - self.cell_size // 2 + 2),
                                      (x + self.cell_size // 2 - 1, y - self.cell_size // 2 + 2),
@@ -154,45 +163,51 @@ class Draw:
             if layers[-1][i] != max(layers[-1]):
                 layers[-1][i] = 0
 
-        texts = ["perete", "măr", "șarpe", "cap stânga", "cap dreapta", "cap sus", "cap jos", "coadă stânga", "coadă dreapta", "coadă sus", "coadă jos", "stânga", "înainte", "dreapta", "scor", "pași", "direcție", "lungine"]
+        texts = ["perete", "măr", "șarpe", "cap stânga", "cap dreapta", "cap sus", "cap jos", "coadă stânga",
+                 "coadă dreapta", "coadă sus", "coadă jos", "stânga", "înainte", "dreapta", "scor", "pași", "direcție",
+                 "lungine"]
 
         for i in range(1, len(self.model.dimensions)):
             for j in range(self.model.dimensions[i - 1]):
                 for k in range(self.model.dimensions[i]):
                     if layers[i - 1][j] > 0 and layers[i][k] > 0:
                         pygame.draw.line(self.screen, GREEN,
-                                     (i * layer_gap + node_gap//3, j * node_gap + (self.height - node_gap * self.model.dimensions[i - 1]) // 2),
-                                     ((i + 1) * layer_gap - node_gap//3 , k * node_gap + (self.height - node_gap * self.model.dimensions[i]) // 2), 1)
+                                         (i * layer_gap + node_gap // 3,
+                                          j * node_gap + (self.height - node_gap * self.model.dimensions[i - 1]) // 2),
+                                         ((i + 1) * layer_gap - node_gap // 3,
+                                          k * node_gap + (self.height - node_gap * self.model.dimensions[i]) // 2), 1)
 
-        for i in range(1,len(self.model.dimensions) + 1):
-            advantage = (self.height - node_gap * self.model.dimensions[i - 1])//2
+        for i in range(1, len(self.model.dimensions) + 1):
+            advantage = (self.height - node_gap * self.model.dimensions[i - 1]) // 2
             for j in range(self.model.dimensions[i - 1]):
                 pygame.draw.circle(self.screen, GREEN, (i * layer_gap, j * node_gap + advantage), node_gap // 3 + 2, 0)
                 if layers[i - 1][j] > 0:
                     if i == 1:
-                        self.screen.blit(self.font.render(texts[j//8 + max(0,j-24)], False, GREEN),
-                                         ((i-0.7) * layer_gap, j * node_gap + advantage - 10))
+                        self.screen.blit(self.font.render(texts[j // 8 + max(0, j - 24)], False, GREEN),
+                                         ((i - 0.7) * layer_gap, j * node_gap + advantage - 10))
                     pygame.draw.circle(self.screen, GREEN, (i * layer_gap, j * node_gap + advantage), node_gap // 3, 0)
                     if i == len(self.model.dimensions):
                         self.screen.blit(self.font.render(texts[j + 11], False, GREEN),
-                                         ((i+0.2) * layer_gap, j * node_gap + advantage - 10))
+                                         ((i + 0.2) * layer_gap, j * node_gap + advantage - 10))
                 else:
                     if i == 1:
-                        self.screen.blit(self.font.render(texts[j//8 + max(0,j-24)], False, GRID_COLOR),
-                                         ((i-0.7) * layer_gap, j * node_gap + advantage - 10))
+                        self.screen.blit(self.font.render(texts[j // 8 + max(0, j - 24)], False, GRID_COLOR),
+                                         ((i - 0.7) * layer_gap, j * node_gap + advantage - 10))
                     if i == len(self.model.dimensions):
                         self.screen.blit(self.font.render(texts[j + 11], False, GRID_COLOR),
-                                         ((i+0.2) * layer_gap, j * node_gap + advantage - 10))
-                    pygame.draw.circle(self.screen, BACKGROUND_COLOR, (i * layer_gap, j * node_gap + advantage ), node_gap // 3, 0)
+                                         ((i + 0.2) * layer_gap, j * node_gap + advantage - 10))
+                    pygame.draw.circle(self.screen, BACKGROUND_COLOR, (i * layer_gap, j * node_gap + advantage),
+                                       node_gap // 3, 0)
 
     def vision_toggle(self):
 
         position_x = self.width - 599
         position_y = 610
         pygame.draw.rect(self.screen, GRID_COLOR, (position_x - 2, position_y - 2, 27, 27))
-        pygame.draw.rect(self.screen, GREEN if self.vision else BACKGROUND_COLOR, (position_x , position_y , 23, 23))
+        pygame.draw.rect(self.screen, GREEN if self.vision else BACKGROUND_COLOR, (position_x, position_y, 23, 23))
         font = pygame.font.Font(None, 25)
-        self.screen.blit(font.render("Viziune PORNIT/OPRIT", False, GREEN if self.vision else GRID_COLOR), (position_x + 29, position_y + 4))
+        self.screen.blit(font.render("Viziune PORNIT/OPRIT", False, GREEN if self.vision else GRID_COLOR),
+                         (position_x + 29, position_y + 4))
 
     def model_toggle(self):
 
@@ -201,12 +216,16 @@ class Draw:
 
         font = pygame.font.Font(None, 25)
         pygame.draw.rect(self.screen, GRID_COLOR, (position_x - 2, position_y - 2, 150, 27))
-        pygame.draw.rect(self.screen, GREEN if self.model_switch else BACKGROUND_COLOR, (position_x, position_y, 146, 23))
-        self.screen.blit(font.render("RL", False, BACKGROUND_COLOR if self.model_switch else GRID_COLOR), (position_x + 65, position_y + 4))
+        pygame.draw.rect(self.screen, GREEN if self.model_switch else BACKGROUND_COLOR,
+                         (position_x, position_y, 146, 23))
+        self.screen.blit(font.render("RL", False, BACKGROUND_COLOR if self.model_switch else GRID_COLOR),
+                         (position_x + 65, position_y + 4))
 
         pygame.draw.rect(self.screen, GRID_COLOR, (position_x + 150, position_y - 2, 150, 27))
-        pygame.draw.rect(self.screen, GREEN if not self.model_switch else BACKGROUND_COLOR, (position_x + 152, position_y, 146, 23))
-        self.screen.blit(font.render("GA", False, BACKGROUND_COLOR if not self.model_switch else GRID_COLOR), (position_x + 215, position_y + 4))
+        pygame.draw.rect(self.screen, GREEN if not self.model_switch else BACKGROUND_COLOR,
+                         (position_x + 152, position_y, 146, 23))
+        self.screen.blit(font.render("GA", False, BACKGROUND_COLOR if not self.model_switch else GRID_COLOR),
+                         (position_x + 215, position_y + 4))
 
     def draw_info(self):
 
@@ -214,8 +233,9 @@ class Draw:
         position_y = 700
 
         font = pygame.font.Font(None, 40)
-        self.screen.blit(font.render("Scor: " + str(self.game.snake.score) + " | Pași: " + str(self.game.snake.steps) + " | Energie: " + str(self.game.snake.energy), False, (255,255,255)), (position_x, position_y))
-
+        self.screen.blit(font.render(
+            "Scor: " + str(self.game.snake.score) + " | Pași: " + str(self.game.snake.steps) + " | Energie: " + str(
+                self.game.snake.energy), False, (255, 255, 255)), (position_x, position_y))
 
     def win_flicker(self):
         position_x = self.width - 510
@@ -272,4 +292,3 @@ class Draw:
 
     def quit(self):
         pygame.quit()
-

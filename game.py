@@ -128,7 +128,7 @@ class Game:
         while 0 <= x < self.board_size[0] and 0 <= y < self.board_size[1]:
             if collision_with_snake(self.snake.body, (x, y)):
                 is_body = 1.0 / len
-                self.vision_for_draw.append((apple_x, apple_y, x, y,False))
+                self.vision_for_draw.append((apple_x, apple_y, x, y, False))
                 return is_wall, is_apple, is_body
             for apple in self.apples:
                 if (x, y) == (apple.x, apple.y):

@@ -1,6 +1,8 @@
 from game import Game
 from draw_game import Draw
 from plots import Plot
+
+
 def choose_action(x, y, board_size):
     if x == 0:
         return 0
@@ -14,6 +16,7 @@ def choose_action(x, y, board_size):
         return 0
 
     return 1
+
 
 if __name__ == "__main__":
     game = Game((6, 6), num_apples=1)
@@ -33,5 +36,3 @@ if __name__ == "__main__":
             print(reward)
             if done:
                 break
-
-

@@ -2,7 +2,8 @@ import cv2 as cv
 import random
 import copy
 
-def load_images(size = 32):
+
+def load_images(size=32):
     apple = cv.imread('images/apple.png', cv.IMREAD_UNCHANGED)
     apple = cv.resize(apple, (size, size), interpolation=cv.INTER_NEAREST)
     apple = cv.cvtColor(apple, cv.COLOR_BGRA2RGBA)
@@ -50,7 +51,8 @@ def load_images(size = 32):
     bent_right_down = cv.rotate(bent_down_left, cv.ROTATE_90_COUNTERCLOCKWISE)
     bent_right_up = cv.flip(bent_right_down, 0)
 
-    bent = [bent_down_left, bent_down_right, bent_up_left, bent_up_right, bent_left_up, bent_left_down, bent_right_up, bent_right_down]
+    bent = [bent_down_left, bent_down_right, bent_up_left, bent_up_right, bent_left_up, bent_left_down, bent_right_up,
+            bent_right_down]
     return apple, grass, mud, head, body, tail, bent
 
 
@@ -119,9 +121,10 @@ def get_random_color():
 
     return original, darker, brighter
 
-#168 230 29 original
-#34 177 76 darker
-#211 249 188 brighter
+
+# 168 230 29 original
+# 34 177 76 darker
+# 211 249 188 brighter
 
 def change_colors(img, original, darker, brighter):
     img = copy.deepcopy(img)
