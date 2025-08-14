@@ -48,6 +48,11 @@ Evaluation metrics:
 - Custom implementation of Genetic Algorithms.
 - PPO based on policy gradient.
 
+  
+## Demonstration
+
+![Watch the video](demo_snake.gif)
+
 **Author:** Anca Alexandru-Iulian  
 **Scientific Coordinator:** Prof. Dr. Alexe Bogdan  
 Faculty of Mathematics and Computer Science, University of Bucharest – 2025
