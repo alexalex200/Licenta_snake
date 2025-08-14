@@ -51,7 +51,7 @@ Evaluation metrics:
   
 ## Demonstration
 
-![Watch the video](demo_snake.gif)
+![Watch the video](Demo_snake.gif)
 
 **Author:** Anca Alexandru-Iulian  
 **Scientific Coordinator:** Prof. Dr. Alexe Bogdan  
